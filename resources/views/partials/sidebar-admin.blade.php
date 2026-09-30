@@ -75,9 +75,9 @@
 
         {{-- Data Departemen --}}
         <a
-            href="{{ route('admin.jurusan') }}"
+            href="{{ route('admin.jurusan.index') }}"
             class="flex h-[34px] items-center gap-4 rounded-lg px-4 text-[13px] transition
-            {{ request()->routeIs('admin.jurusan') ? $activeClass : $inactiveClass }}"
+            {{ request()->routeIs('admin.jurusan.index') ? $activeClass : $inactiveClass }}"
         >
 
             <svg
@@ -101,9 +101,9 @@
 
         {{-- Data Sarana Prasarana --}}
         <a
-            href="{{ route('admin.sarana') }}"
+            href="{{ route('admin.sarana.index') }}"
             class="flex h-[34px] items-center gap-4 rounded-lg px-4 text-[13px] transition
-            {{ request()->routeIs('admin.sarana') ? $activeClass : $inactiveClass }}"
+            {{ request()->routeIs('admin.sarana.index') ? $activeClass : $inactiveClass }}"
         >
 
             <svg
@@ -128,9 +128,9 @@
 
         {{-- Pengajuan --}}
          <a
-            href="{{ route('admin.pengajuan') }}"
+            href="{{ route('admin.pengajuan.index') }}"
             class="flex h-[34px] items-center gap-4 rounded-lg px-4 text-[13px] transition
-            {{ request()->routeIs('admin.pengajuan') ? $activeClass : $inactiveClass }}"
+            {{ request()->routeIs('admin.pengajuan.index') ? $activeClass : $inactiveClass }}"
         >
 
             <svg
@@ -160,9 +160,9 @@
 
         {{-- Pengembalian --}}
          <a
-            href="{{ route('admin.pengembalian') }}"
+            href="{{ route('admin.pengembalian.index') }}"
             class="flex h-[34px] items-center gap-4 rounded-lg px-4 text-[13px] transition
-            {{ request()->routeIs('admin.pengembalian') ? $activeClass : $inactiveClass }}"
+            {{ request()->routeIs('admin.pengembalian.index') ? $activeClass : $inactiveClass }}"
         >
 
             <svg
@@ -191,9 +191,9 @@
 
         {{-- Jadwal --}}
          <a
-            href="{{ route('admin.jadwal') }}"
+            href="{{ route('admin.jadwal.index') }}"
             class="flex h-[34px] items-center gap-4 rounded-lg px-4 text-[13px] transition
-            {{ request()->routeIs('admin.jadwal') ? $activeClass : $inactiveClass }}"
+            {{ request()->routeIs('admin.jadwal.index') ? $activeClass : $inactiveClass }}"
         >
 
             <svg
@@ -213,7 +213,7 @@
         </a>
 
 
-      
+
 
     </nav>
 
