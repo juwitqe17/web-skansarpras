@@ -1,216 +1,34 @@
-<aside
-    class="fixed left-0 top-0 z-50 flex h-screen w-[295px] flex-col bg-[#003b2b] px-[18px] py-8 pt-10 text-white"
->
-
-    @php
-        $activeClass = 'bg-[#ffffff]/15 text-white';
-        $inactiveClass = 'text-white/80 hover:bg-white/10 hover:text-white';
-    @endphp
-
-    {{-- BRAND --}}
-    <div class="border-b border-white/50 px-2 pb-5">
-
-        <div class="flex items-center gap-4">
-
-            {{-- Logo --}}
-            <div class="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-xl bg-[#f8f3e8]">
-
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-8 w-8 text-[#386553]"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="1.4"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7l7-4z"
-                    />
-
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M8.5 11h7M9.5 8.5h5M9 14.5h6"
-                    />
-                </svg>
-
-            </div>
-
-
-            {{-- Brand Text --}}
+<aside class="hidden lg:flex fixed inset-y-0 left-0 w-[264px] flex-col bg-brand text-white px-4 py-6">
+        <div class="flex items-center gap-3 px-2 pb-4 border-b border-white/20">
+            <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-12 h-12 rounded bg-white/90 p-1">
             <div>
-
-                <h1 class="text-[25px] font-bold leading-none">
-                    SkanSarpras
-                </h1>
-
-                <p class="mt-2 text-[12px] leading-4 text-white/65">
-                    Manajemen Sarana Prasarana<br>
-                    SMK Negeri 1 Purwosari
-                </p>
-
+                <p class="font-head font-bold text-2xl leading-tight">SkanSarpras</p>
+                <p class="text-xs text-white/60 leading-tight">Manajemen Sarana Prasarana<br>SMK Negeri 1 Purwosari</p>
             </div>
-
         </div>
 
-    </div>
+        @php
+            $menu = [
+                ['Beranda', 'peminjam.dashboard', 'layout-dashboard'],
+                ['Sarana Prasarana', 'peminjam.sarana.index', 'archive'],
+                ['Peminjaman', 'peminjam.peminjaman.index', 'clipboard-list'],
+                ['Riwayat Pengajuan', 'peminjam.riwayat.index', 'history'],
+            ];
+        @endphp
+        <nav class="mt-6 space-y-2 text-base">
+            @foreach ($menu as [$label, $route, $icon])
+                <a href="{{ Route::has($route) ? route($route) : '#' }}"
+                   class="flex items-center gap-3 rounded-md px-4 py-3 transition
+                          {{ request()->routeIs($route) ? 'bg-brand-soft' : 'hover:bg-white/10' }}">
+                    <i data-lucide="{{ $icon }}" class="w-5 h-5"></i> {{ $label }}
+                </a>
+            @endforeach
+        </nav>
 
-
-    {{-- MENU --}}
-    <nav class="mt-5 space-y-2">
-
-        {{-- Beranda --}}
-       <a
-            href="{{ route('peminjam.dashboard') }}"
-            class="flex h-[34px] items-center gap-4 rounded-lg px-4 text-[13px] transition
-            {{ request()->routeIs('peminjam.dashboard') ? $activeClass : $inactiveClass }}"
-        >
-
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-            >
-                <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/>
-            </svg>
-
-            <span>Beranda</span>
-
-        </a>
-
-
-        {{-- Sarana Prasarana --}}
-        <a
-            href="{{ route('peminjam.sarana') }}"
-            class="flex h-[34px] items-center gap-4 rounded-lg px-4 text-[13px] transition
-            {{ request()->routeIs('peminjam.sarana') ? $activeClass : $inactiveClass }}"
-        >
-
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="1.8"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M4 7h16M6 7v12h12V7M8 4h8v3H8V4zM9 11h6M9 15h6"
-                />
-            </svg>
-
-            <span>Sarana Prasarana</span>
-
-        </a>
-
-
-        {{-- Peminjaman --}}
-        <a
-            href="{{ route('peminjam.peminjaman') }}"
-            class="flex h-[34px] items-center gap-4 rounded-lg px-4 text-[13px] transition
-            {{ request()->routeIs('peminjam.peminjaman') ? $activeClass : $inactiveClass }}"
-        >
-
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="1.8"
-            >
-                <rect x="4" y="5" width="16" height="15" rx="2"/>
-                <path stroke-linecap="round" d="M8 3v4M16 3v4M4 10h16"/>
-                <circle cx="17" cy="17" r="3" fill="#003b2b"/>
-            </svg>
-
-            <span>Peminjaman</span>
-
-        </a>
-
-
-        {{-- Riwayat --}}
-        <a
-            href="{{ route('peminjam.riwayat') }}"
-            class="flex h-[34px] items-center gap-4 rounded-lg px-4 text-[13px] transition
-            {{ request()->routeIs('peminjam.riwayat') ? $activeClass : $inactiveClass }}"
-        >
-
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="1.8"
-            >
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M4 12a8 8 0 108-8"
-                />
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M4 6v6h6"
-                />
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 8v4l3 2"
-                />
-            </svg>
-
-            <span>Riwayat Pengajuan</span>
-
-        </a>
-
-    </nav>
-
-
-    {{-- LOGOUT DI BAWAH --}}
-    <div class="mt-auto px-2">
-
-        <form action="{{ route('logout') }}" method="POST">
+        <form method="POST" action="{{ Route::has('logout') ? route('logout') : '#' }}" class="mt-auto">
             @csrf
-
-            <button
-                type="submit"
-                class="flex w-full items-center gap-4 rounded-lg px-4 py-3 text-left text-sm text-white/90 transition hover:bg-red-500/15 hover:text-red-200"
-            >
-
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                >
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M10 17l5-5-5-5M15 12H3"
-                    />
-
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M21 19V5a2 2 0 00-2-2h-6"
-                    />
-                </svg>
-
-                <span>Keluar Akun</span>
-
+            <button class="w-full flex items-center gap-3 rounded-md bg-brand-soft px-4 py-3 text-base text-red-400 hover:bg-red-500/20">
+                <i data-lucide="log-out" class="w-5 h-5"></i> Keluar Akun
             </button>
-
         </form>
-
-    </div>
-
-</aside>
+    </aside>
