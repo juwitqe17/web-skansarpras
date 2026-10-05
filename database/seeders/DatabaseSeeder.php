@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
 
+<<<<<<< HEAD
         $rpl = Jurusan::updateOrCreate(
             ['kode_jurusan' => 'RPL'],
             [
@@ -475,5 +476,11 @@ class DatabaseSeeder extends Seeder
                 'catatan' => 'Barang dikembalikan dalam kondisi baik.',
             ]
         );
+=======
+        // User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
+>>>>>>> a2ae9526f8a48fe898a2ee22d648b47783f846fc
     }
 }
