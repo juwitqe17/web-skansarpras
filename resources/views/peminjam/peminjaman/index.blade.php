@@ -32,11 +32,11 @@
 
     @php
         $menu = [
-            ['Beranda', 'peminjam.dashboard', 'layout-dashboard'],
-            ['Sarana Prasarana', 'peminjam.sarana.index', 'archive'],
-            ['Peminjaman', 'peminjam.pengajuan.create', 'clipboard-list'],
-            ['Riwayat Pengajuan', 'peminjam.riwayat.index', 'history'],
-        ];
+    ['Beranda', 'peminjam.dashboard', 'layout-dashboard'],
+    ['Sarana Prasarana', 'peminjam.sarana.index', 'archive'],
+    ['Peminjaman', 'peminjam.pengajuan.create', 'clipboard-list'],   // <- ini yang diganti
+    ['Riwayat Pengajuan', 'peminjam.riwayat.index', 'history'],
+];
     @endphp
     <nav class="mt-6 space-y-1.5 text-sm">
         @foreach ($menu as [$label, $route, $icon])
