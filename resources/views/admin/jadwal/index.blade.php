@@ -347,24 +347,23 @@
                     $diluarBulan = $tanggal->month !== $bulan->month;
                 @endphp
 
+                {{-- Diubah: min-h diperkecil dari 130px ke 100px agar lebih proporsional, dan warna luar bulan lebih kontras (bg-gray-100/80) --}}
                 <div
-                    class="relative min-h-[130px] border-b border-r border-gray-200 p-3
-                    {{ $diluarBulan ? 'bg-gray-50' : 'bg-white' }}"
+                    class="relative min-h-[100px] border-b border-r border-gray-200 p-2.5
+                    {{ $diluarBulan ? 'bg-gray-200/80' : 'bg-white' }}"
                 >
 
                     {{-- NOMOR TANGGAL --}}
                     <div
                         class="mb-2 text-right text-xs font-medium
-                        {{ $tanggal->isToday()
-                            ? 'text-emerald-800 font-bold'
-                            : 'text-gray-500' }}"
+                        {{ $diluarBulan ? 'text-gray-400 font-normal' : ($tanggal->isToday() ? 'text-emerald-800 font-bold' : 'text-gray-700') }}"
                     >
                         {{ $tanggal->day }}
                     </div>
 
 
                     {{-- JADWAL --}}
-                    <div class="space-y-2">
+                    <div class="space-y-1.5">
 
                         @foreach($jadwalHariIni as $jadwal)
 
@@ -389,7 +388,7 @@
                             <button
                                 type="button"
                                 onclick="openJadwal({{ $jadwal->id }}, event)"
-                                class="jadwal-item w-full rounded-lg border-l-4 px-2 py-2 text-left text-xs transition hover:brightness-95 {{ $statusClass }}"
+                                class="jadwal-item w-full rounded-lg border-l-4 px-2 py-1.5 text-left text-xs transition hover:brightness-95 {{ $statusClass }}"
                             >
 
                                 <div class="font-semibold truncate">
@@ -398,12 +397,8 @@
                                     {{ \Carbon\Carbon::parse($jadwal->waktu_selesai)->format('H:i') }}
                                 </div>
 
-                                <div class="mt-1 truncate font-medium">
+                                <div class="mt-0.5 truncate font-medium">
                                     {{ $jadwal->sarana->nama_sarana ?? '-' }}
-                                </div>
-
-                                <div class="mt-1 truncate text-[10px] opacity-70">
-                                    {{ $jadwal->peminjaman->user->name ?? '-' }}
                                 </div>
 
                             </button>
@@ -561,94 +556,63 @@
     const jadwalData = @json($jadwalData);
 
     function openJadwal(id, event) {
+        event.stopPropagation(); // Mencegah event klik langsung menutup popover
 
         const jadwal = jadwalData.find(item => item.id === id);
-
         if (!jadwal) return;
 
-        document.getElementById('popoverTitle').textContent =
-            jadwal.nama_sarana;
-
-        document.getElementById('popoverSubtitle').textContent =
-            `${jadwal.kode_sarana} • ${jadwal.jurusan}`;
-
-        document.getElementById('popoverPeminjam').textContent =
-            jadwal.peminjam;
-
-        document.getElementById('popoverWaktu').textContent =
-            `${jadwal.tanggal} • ${jadwal.waktu_mulai} - ${jadwal.waktu_selesai}`;
-
-        document.getElementById('popoverKeperluan').textContent =
-            jadwal.keperluan;
-
-        document.getElementById('popoverDetail').href =
-            `/admin/jadwal/${jadwal.id}`;
-
+        document.getElementById('popoverTitle').textContent = jadwal.nama_sarana;
+        document.getElementById('popoverSubtitle').textContent = `${jadwal.kode_sarana} • ${jadwal.jurusan}`;
+        document.getElementById('popoverPeminjam').textContent = jadwal.peminjam;
+        document.getElementById('popoverWaktu').textContent = `${jadwal.tanggal} • ${jadwal.waktu_mulai} - ${jadwal.waktu_selesai}`;
+        document.getElementById('popoverKeperluan').textContent = jadwal.keperluan;
+        document.getElementById('popoverDetail').href = `/admin/jadwal/${jadwal.id}`;
 
         const status = document.getElementById('popoverStatus');
-
         if (jadwal.status === 'berlangsung') {
-
             status.textContent = 'Berlangsung';
-
-            status.className =
-                'rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800';
-
+            status.className = 'rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800';
         } else {
-
             status.textContent = 'Selesai';
-
-            status.className =
-                'rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600';
-
+            status.className = 'rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600';
         }
 
-
         const popover = document.getElementById('jadwalPopover');
-
         popover.classList.remove('hidden');
 
         const button = event.currentTarget;
         const rect = button.getBoundingClientRect();
 
         let left = rect.left;
-        let top = rect.bottom + 10;
+        let top = rect.bottom + 8;
 
         if (left + popover.offsetWidth > window.innerWidth - 15) {
             left = window.innerWidth - popover.offsetWidth - 15;
         }
 
         if (top + popover.offsetHeight > window.innerHeight - 15) {
-            top = rect.top - popover.offsetHeight - 10;
+            top = rect.top - popover.offsetHeight - 8;
         }
 
         popover.style.left = `${left}px`;
         popover.style.top = `${top}px`;
     }
 
-
     function closeJadwal() {
-
-        document
-            .getElementById('jadwalPopover')
-            .classList.add('hidden');
-
+        document.getElementById('jadwalPopover').classList.add('hidden');
     }
 
+    // Menutup popover saat halaman digulir (scroll) agar tidak stuck
+    window.addEventListener('scroll', function() {
+        closeJadwal();
+    }, { passive: true });
 
+    // Menutup popover ketika area luar diklik
     document.addEventListener('click', function(event) {
-
         const popover = document.getElementById('jadwalPopover');
-
-        if (
-            !popover.contains(event.target) &&
-            !event.target.closest('.jadwal-item')
-        ) {
+        if (!popover.contains(event.target) && !event.target.closest('.jadwal-item')) {
             closeJadwal();
         }
-
     });
-
 </script>
-
 @endsection
