@@ -118,4 +118,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
         Route::get('/riwayat/{peminjaman}', [RiwayatController::class, 'show'])
             ->name('riwayat.show');
+            
+        Route::get('/profil', function () { return view('peminjam.profil'); })->name('profil');
     });

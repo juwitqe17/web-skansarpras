@@ -20,11 +20,12 @@
 {{-- SIDEBAR --}}
 <aside class="hidden lg:flex fixed inset-y-0 left-0 z-30 w-60 flex-col bg-brand px-4 py-6 text-white">
     <div class="flex items-center gap-3 border-b border-white/15 px-1 pb-5">
-        <div class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/90 text-brand">
-            <i data-lucide="school" class="h-5 w-5"></i>
-            <img src="{{ asset('images/logosmk.png') }}" alt="Logo SkanSarpras" onerror="this.remove()"
-                 class="absolute inset-0 h-full w-full rounded-lg bg-white object-contain p-1">
-        </div>
+       <div class="relative flex h-12 w-12 shrink-0 items-center justify-center">
+    <img src="{{ asset('images/logosmk.png') }}" alt="Logo SkanSarpras"
+         onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden')"
+         class="h-full w-full object-contain drop-shadow-[0_0_10px_rgba(213,235,221,0.25)]">
+    <i data-lucide="school" class="hidden h-6 w-6 text-white"></i>
+</div>
         <div>
             <p class="font-head text-lg font-bold leading-tight">SkanSarpras</p>
             <p class="text-[11px] leading-snug text-white/60">Manajemen Sarana Prasarana<br>SMK Negeri 1 Purwosari</p>
