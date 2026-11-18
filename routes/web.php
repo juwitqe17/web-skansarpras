@@ -9,7 +9,7 @@ use App\Http\Controllers\Peminjam\SaranaController as PeminjamSaranaController;
 use App\Http\Controllers\Peminjam\PengajuanController as PeminjamPengajuanController;
 use App\Http\Controllers\Peminjam\PengembalianController as PeminjamPengembalianController;
 use App\Http\Controllers\Peminjam\RiwayatController;
-
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -37,7 +37,7 @@ Route::post('/logout', [AuthController::class, 'logout'])
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
 
-        Route::get('/dashboard', function () { return view('admin.dashboard'); })->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/jurusan', [JurusanController::class, 'index'])->name('jurusan.index');
         Route::get('/jurusan/create', [JurusanController::class, 'create'])->name('jurusan.create');
@@ -61,6 +61,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
         Route::get('/pengembalian', [AdminPengembalianController::class, 'index']) ->name('pengembalian.index');
         Route::get('/pengembalian/{pengembalian}', [AdminPengembalianController::class, 'show'])->name('pengembalian.show');
+        Route::get('/pengembalian/{pengembalian}/verify', [AdminPengembalianController::class, 'verify'])->name('pengembalian.verify');
         Route::patch('/pengembalian/{pengembalian}/process', [AdminPengembalianController::class, 'process'])->name('pengembalian.process');
 
         Route::get('/jadwal', [JadwalPenggunaanController::class, 'index'])->name('jadwal.index');
