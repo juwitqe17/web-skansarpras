@@ -15,6 +15,7 @@ class Pengembalian extends Model
         'tanggal_pengembalian',
         'kondisi_pengembalian',
         'status',
+        'kelayakan', // <--- Tambahkan ini agar bisa disimpan ke database
         'catatan',
     ];
 
@@ -22,6 +23,7 @@ class Pengembalian extends Model
     {
         return [
             'tanggal_pengembalian' => 'datetime',
+            'kelayakan'            => 'array', // <--- Tambahkan ini agar otomatis dibaca sebagai array/JSON
         ];
     }
 

@@ -12,35 +12,47 @@ class PengembalianController extends Controller
      * Daftar pengembalian.
      */
     public function index(Request $request)
-    {
-        $query = Pengembalian::with([
-            'peminjaman.user.jurusan',
-            'peminjaman.detailPeminjamans.sarana',
-            'admin',
-        ]);
+{
+    $query = Pengembalian::with([
+        'peminjaman.user.jurusan',
+        'peminjaman.detailPeminjamans.sarana',
+        'admin',
+    ]);
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-
-            $query->whereHas('peminjaman.user', function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%");
-            });
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        $pengembalians = $query
-            ->latest('tanggal_pengembalian')
-            ->paginate(10)
-            ->withQueryString();
-
-        return view(
-            'admin.pengembalian.index',
-            compact('pengembalians')
-        );
+    // Filter berdasarkan Pencarian Nama Peminjam
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->whereHas('peminjaman.user', function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%");
+        });
     }
+
+    // Filter berdasarkan Status
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+
+    // Filter berdasarkan Departemen / Jurusan baru
+    if ($request->filled('jurusan_id')) {
+        $jurusanId = $request->jurusan_id;
+        $query->whereHas('peminjaman.user', function ($q) use ($jurusanId) {
+            $q->where('jurusan_id', $jurusanId);
+        });
+    }
+
+    $pengembalians = $query
+        ->latest('tanggal_pengembalian')
+        ->paginate(10)
+        ->withQueryString();
+
+    // Ambil daftar jurusan untuk pilihan di dropdown filter
+    $jurusans = \App\Models\Jurusan::all(); 
+
+    return view(
+        'admin.pengembalian.index',
+        compact('pengembalians', 'jurusans')
+    );
+}
 
     /**
      * Detail pengembalian.
@@ -60,31 +72,39 @@ class PengembalianController extends Controller
     }
 
     /**
-     * Proses pengembalian.
+     * Menampilkan form verifikasi pengembalian.
+     */
+    public function verify(Pengembalian $pengembalian)
+    {
+        return view('admin.pengembalian.verify', compact('pengembalian'));
+    }
+
+    /**
+     * Memproses dan menyimpan data verifikasi pengembalian.
      */
     public function process(Request $request, Pengembalian $pengembalian)
     {
-        $validated = $request->validate([
-            'kondisi_pengembalian' => 'required|string',
-            'catatan' => 'nullable|string',
+        $request->validate([
+            'kondisi_pengembalian' => 'required',
+            'kelayakan'            => 'nullable|array',
+            'catatan'              => 'nullable|string',
         ]);
 
-        if ($pengembalian->status === 'selesai') {
-            return redirect()
-                ->back()
-                ->with('error', 'Pengembalian ini sudah diproses.');
-        }
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $pengembalian) {
+            // 1. Update status tabel pengembalian menjadi selesai
+            $pengembalian->update([
+                'kondisi_pengembalian' => $request->kondisi_pengembalian,
+                'kelayakan'            => $request->kelayakan,
+                'catatan'              => $request->catatan,
+                'status'               => 'selesai',
+            ]);
 
-        $pengembalian->update([
-            'admin_id' => auth()->id(),
-            'tanggal_pengembalian' => now(),
-            'kondisi_pengembalian' => $validated['kondisi_pengembalian'],
-            'status' => 'selesai',
-            'catatan' => $validated['catatan'] ?? null,
-        ]);
+            // 2. OTOMATIS UPDATE STATUS PEMINJAMAN MENJADI SELESAI
+            $pengembalian->peminjaman()->update([
+                'status' => 'selesai',
+            ]);
+        });
 
-        return redirect()
-            ->back()
-            ->with('success', 'Pengembalian berhasil diproses.');
+        return redirect()->route('admin.pengembalian.index')->with('success', 'Pengembalian barang berhasil diverifikasi dan status peminjaman menjadi selesai.');
     }
 }

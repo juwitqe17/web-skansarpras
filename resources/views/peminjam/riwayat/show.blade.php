@@ -3,35 +3,50 @@
 
 @section('content')
 @php
-    // Dari controller: $peminjaman (with('sarana')). Kolom dibaca fleksibel.
+    // Dari controller: $peminjaman. Nama sarana diambil dari detailPeminjamans.sarana.
     $p = $peminjaman;
     $tgl = fn ($v) => $v ? \Carbon\Carbon::parse($v)->locale('id')->translatedFormat('l, d F Y') : null;
     $tglPendek = fn ($v) => $v ? \Carbon\Carbon::parse($v)->locale('id')->translatedFormat('d F Y, H:i') : null;
 
+    // Nilai status di database -> kunci tampilan
+    $statusMap = [
+        'menunggu' => 'diproses', 'pending' => 'diproses', 'diajukan' => 'diproses',
+        'sedang_dipinjam' => 'dipinjam', 'selesai' => 'dikembalikan',
+    ];
     $s = strtolower((string) data_get($p, 'status', 'diproses'));
-    $s = in_array($s, ['menunggu', 'pending', 'diajukan']) ? 'diproses' : $s;
+    $s = $statusMap[$s] ?? $s;
     $st = [
         'diproses'     => ['Diproses',     'bg-amber-50 text-amber-700 ring-amber-200'],
         'disetujui'    => ['Disetujui',    'bg-emerald-50 text-emerald-700 ring-emerald-200'],
         'dipinjam'     => ['Dipinjam',     'bg-sky-50 text-sky-700 ring-sky-200'],
+        'terlambat'    => ['Terlambat',    'bg-orange-50 text-orange-700 ring-orange-200'],
         'dikembalikan' => ['Dikembalikan', 'bg-slate-100 text-slate-600 ring-slate-200'],
         'dibatalkan'   => ['Dibatalkan',   'bg-slate-100 text-slate-500 ring-slate-200'],
         'ditolak'      => ['Ditolak',      'bg-red-50 text-red-700 ring-red-200'],
     ];
     [$label, $badge] = $st[$s] ?? [ucfirst($s), $st['diproses'][1]];
 
-    $nama   = data_get($p, 'sarana.nama') ?? data_get($p, 'sarana.nama_sarana') ?? 'Sarana';
-    $kode   = data_get($p, 'sarana.kode_inventaris') ?? data_get($p, 'sarana.kode') ?? '-';
-    $kat    = data_get($p, 'sarana.kategori.nama_kategori') ?? data_get($p, 'sarana.kategori.nama') ?? (is_scalar(data_get($p, 'sarana.kategori')) ? data_get($p, 'sarana.kategori') : '-');
-    $lokasi = data_get($p, 'lokasi_pengambilan') ?? data_get($p, 'sarana.lokasi') ?? '-';
-    $foto   = data_get($p, 'sarana.foto') ?? data_get($p, 'sarana.gambar');
+    // Satu pengajuan bisa memuat beberapa sarana (tabel detail_peminjamans)
+    $details = collect(data_get($p, 'detailPeminjamans', []));
+    $sar = data_get($p, 'sarana') ?? data_get($details->first(), 'sarana');
+    $nama = $details->map(fn ($d) => data_get($d, 'sarana.nama_sarana'))->filter()->join(', ')
+        ?: (data_get($sar, 'nama_sarana') ?? data_get($sar, 'nama') ?? 'Sarana');
+    $jumlah = $details->isNotEmpty()
+        ? $details->sum(fn ($d) => (int) data_get($d, 'jumlah', 1))
+        : data_get($p, 'jumlah', 1);
+
+    $kode   = data_get($sar, 'kode_inventaris') ?? data_get($sar, 'kode_sarana') ?? data_get($sar, 'kode') ?? '-';
+    $kat    = data_get($sar, 'kategori.nama_kategori') ?? data_get($sar, 'jurusan.nama_jurusan') ?? '-';
+    $lokasi = data_get($p, 'lokasi_pengambilan') ?? data_get($sar, 'lokasi') ?? '-';
+    $foto   = data_get($sar, 'foto') ?? data_get($sar, 'gambar');
     if ($foto && ! preg_match('#^(https?:)?//|^/#', $foto)) $foto = asset('storage/'.$foto);
-    $mulai  = data_get($p, 'jam_mulai'); $selesai = data_get($p, 'jam_selesai');
+    $mulai  = data_get($p, 'waktu_mulai') ?? data_get($p, 'jam_mulai');
+    $selesai = data_get($p, 'waktu_selesai') ?? data_get($p, 'jam_selesai');
     $catatan = data_get($p, 'catatan') ?? data_get($p, 'alasan_penolakan');
 
     // Linimasa
     $langkah = ['Diajukan', 'Disetujui', 'Dipinjam', 'Dikembalikan'];
-    $aktif = ['diproses' => 0, 'disetujui' => 1, 'dipinjam' => 2, 'dikembalikan' => 3][$s] ?? 0;
+    $aktif = ['diproses' => 0, 'disetujui' => 1, 'dipinjam' => 2, 'terlambat' => 2, 'dikembalikan' => 3][$s] ?? 0;
     $gagal = in_array($s, ['ditolak', 'dibatalkan']);
     $bisaBatal = $s === 'diproses' && \Illuminate\Support\Facades\Route::has('peminjam.pengajuan.cancel');
 @endphp
@@ -92,8 +107,8 @@
                 <h2 class="font-head text-lg font-bold">Rincian Peminjaman</h2>
                 <dl class="mt-4 grid gap-x-8 gap-y-5 text-sm sm:grid-cols-2">
                     @foreach ([
-                        ['Jumlah Unit', data_get($p, 'jumlah', 1).' unit', 'boxes'],
-                        ['Tanggal Peminjaman', $tgl(data_get($p, 'tanggal_pinjam')) ?? 'Belum ditentukan', 'calendar'],
+                        ['Jumlah Unit', $jumlah.' unit', 'boxes'],
+                        ['Tanggal Peminjaman', $tgl(data_get($p, 'tanggal_peminjaman') ?? data_get($p, 'tanggal_pinjam')) ?? 'Belum ditentukan', 'calendar'],
                         ['Waktu Peminjaman', $mulai ? substr($mulai, 0, 5).' – '.substr((string) $selesai, 0, 5) : '-', 'clock-3'],
                         ['Lokasi Pengambilan', $lokasi, 'map-pin'],
                     ] as [$l, $v, $ic])
@@ -106,7 +121,7 @@
 
                 <div class="mt-6 border-t border-gray-100 pt-5">
                     <p class="text-xs text-gray-500">Tujuan Peminjaman</p>
-                    <p class="mt-1 text-sm leading-relaxed">{{ data_get($p, 'tujuan', '-') }}</p>
+                    <p class="mt-1 text-sm leading-relaxed">{{ data_get($p, 'keperluan') ?? data_get($p, 'tujuan', '-') }}</p>
                 </div>
 
                 @if ($catatan)
@@ -124,7 +139,7 @@
                         </form>
                     @endif
                     @if (in_array($s, ['ditolak', 'dibatalkan', 'dikembalikan']))
-                        <a href="{{ route('peminjam.pengajuan.create', ['sarana' => data_get($p, 'sarana_id')]) }}"
+                        <a href="{{ route('peminjam.pengajuan.create', ['sarana' => data_get($details->first(), 'sarana_id')]) }}"
                            class="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-brand/25 transition hover:bg-brand-soft">
                             <i data-lucide="rotate-ccw" class="h-4 w-4"></i> Ajukan Lagi
                         </a>
