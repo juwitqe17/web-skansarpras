@@ -3,35 +3,53 @@
 
 @section('content')
 @php
-    // Dari controller: $riwayats (pengajuan milik user, with('sarana')). Kolom dibaca fleksibel.
+    // Dari controller: $riwayats (pengajuan milik user). Nama sarana diambil dari detailPeminjamans.sarana.
     $st = [ // [label, kelas badge, warna teks status]
         'diproses'     => ['Diproses',     'bg-amber-50 text-amber-700 ring-amber-200',       'text-amber-700'],
         'disetujui'    => ['Disetujui',    'bg-emerald-50 text-emerald-700 ring-emerald-200', 'text-emerald-700'],
         'dipinjam'     => ['Dipinjam',     'bg-sky-50 text-sky-700 ring-sky-200',             'text-sky-700'],
+        'terlambat'    => ['Terlambat',    'bg-orange-50 text-orange-700 ring-orange-200',    'text-orange-700'],
         'dikembalikan' => ['Dikembalikan', 'bg-slate-100 text-slate-600 ring-slate-200',      'text-slate-600'],
         'dibatalkan'   => ['Dibatalkan',   'bg-slate-100 text-slate-500 ring-slate-200',      'text-slate-500'],
         'ditolak'      => ['Ditolak',      'bg-red-50 text-red-700 ring-red-200',             'text-red-700'],
     ];
+    // Nilai status di database -> kunci tampilan
+    $statusMap = [
+        'menunggu' => 'diproses', 'pending' => 'diproses', 'diajukan' => 'diproses',
+        'sedang_dipinjam' => 'dipinjam', 'selesai' => 'dikembalikan',
+    ];
     $tgl = fn ($v) => $v ? \Carbon\Carbon::parse($v)->locale('id')->translatedFormat('d F Y') : null;
     $jurusan = data_get(auth()->user(), 'jurusan.nama_jurusan') ?? '-';
 
-    $items = ($riwayats ?? $riwayat ?? $peminjamans ?? $pengajuans ?? $pengajuan ?? $daftarRiwayat ?? $data ?? collect())->map(function ($r) use ($st, $tgl, $jurusan) {
+    $items = ($riwayats ?? $riwayat ?? $peminjamans ?? $pengajuans ?? $pengajuan ?? $daftarRiwayat ?? $data ?? collect())->map(function ($r) use ($st, $statusMap, $tgl, $jurusan) {
         $s = strtolower((string) data_get($r, 'status', 'diproses'));
-        $s = in_array($s, ['menunggu', 'pending', 'diajukan']) ? 'diproses' : $s;
-        $f = data_get($r, 'sarana.foto') ?? data_get($r, 'sarana.gambar');
+        $s = $statusMap[$s] ?? $s;
+
+        // Satu pengajuan bisa memuat beberapa sarana (tabel detail_peminjamans)
+        $details = collect(data_get($r, 'detailPeminjamans', []));
+        $sar = data_get($r, 'sarana') ?? data_get($details->first(), 'sarana');
+        $nama = $details->map(fn ($d) => data_get($d, 'sarana.nama_sarana'))->filter()->join(', ')
+            ?: (data_get($sar, 'nama_sarana') ?? data_get($sar, 'nama') ?? 'Sarana');
+        $jumlah = $details->isNotEmpty()
+            ? $details->sum(fn ($d) => (int) data_get($d, 'jumlah', 1))
+            : data_get($r, 'jumlah', 1);
+
+        $f = data_get($sar, 'foto') ?? data_get($sar, 'gambar');
         if ($f && ! preg_match('#^(https?:)?//|^/#', $f)) $f = asset('storage/'.$f);
-        $mulai = data_get($r, 'jam_mulai'); $selesai = data_get($r, 'jam_selesai');
+        $mulai = data_get($r, 'waktu_mulai') ?? data_get($r, 'jam_mulai');
+        $selesai = data_get($r, 'waktu_selesai') ?? data_get($r, 'jam_selesai');
+
         return [
             'id' => data_get($r, 'id'),
-            'nama' => data_get($r, 'sarana.nama') ?? data_get($r, 'sarana.nama_sarana') ?? 'Sarana',
+            'nama' => $nama,
             'foto' => $f,
-            'kode' => data_get($r, 'sarana.kode_inventaris') ?? data_get($r, 'sarana.kode') ?? '-',
-            'jumlah' => data_get($r, 'jumlah', 1),
-            'tujuan' => data_get($r, 'tujuan', '-'),
+            'kode' => data_get($sar, 'kode_inventaris') ?? data_get($sar, 'kode_sarana') ?? data_get($sar, 'kode') ?? '-',
+            'jumlah' => $jumlah,
+            'tujuan' => data_get($r, 'keperluan') ?? data_get($r, 'tujuan', '-'),
             'dibuat' => $tgl(data_get($r, 'created_at')) ?? '-',
-            'tanggal' => in_array($s, ['diproses', 'ditolak']) ? null : $tgl(data_get($r, 'tanggal_pinjam')),
+            'tanggal' => in_array($s, ['diproses', 'ditolak']) ? null : $tgl(data_get($r, 'tanggal_peminjaman') ?? data_get($r, 'tanggal_pinjam')),
             'waktu' => $mulai ? substr($mulai, 0, 5).' – '.substr((string) $selesai, 0, 5) : null,
-            'lokasi' => data_get($r, 'lokasi_pengambilan') ?? data_get($r, 'sarana.lokasi') ?? '-',
+            'lokasi' => data_get($r, 'lokasi_pengambilan') ?? data_get($sar, 'lokasi') ?? '-',
             'jurusan' => $jurusan,
             'status' => $s,
             'label' => $st[$s][0] ?? ucfirst($s),
