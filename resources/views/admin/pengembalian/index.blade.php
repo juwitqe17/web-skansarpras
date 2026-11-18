@@ -9,28 +9,60 @@
         <p class="text-sm text-gray-500 mt-1">Manajemen pengembalian barang yang telah dipinjam & pengecekan kondisi barang.</p>
     </div>
 
-    <!-- Search Input & Status Filter -->
-    <form method="GET" action="{{ route('admin.pengembalian.index') }}" class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row gap-3">
-        <div class="relative flex-1">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-            </span>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama peminjam..." class="w-full bg-gray-50 text-xs pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-600 text-gray-600 placeholder-gray-400">
+    <!-- SATU FORM UTAMA UNTUK SEMUA FILTER -->
+    <form method="GET" action="{{ route('admin.pengembalian.index') }}" class="space-y-4">
+
+        <!-- Card Filter Departemen / Jurusan -->
+        <div class="bg-white p-5 rounded-2xl border border-gray-200/90 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="p-3 bg-gray-100 text-gray-700 rounded-xl">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xs font-extrabold text-gray-900 uppercase tracking-wider">Pilih Kategori Departemen / Jurusan</h3>
+                    <p class="text-[11px] text-gray-400 mt-0.5">Data sarana & prasarana akan disaring sesuai dengan departemen.</p>
+                </div>
+            </div>
+
+            <div class="w-full md:w-72">
+                <select name="jurusan_id" onchange="this.form.submit()" class="w-full bg-gray-50 text-xs text-gray-700 font-medium border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-600 cursor-pointer shadow-2xs">
+                    <option value="">Pilih Departemen / Jurusan</option>
+                    @foreach($jurusans ?? [] as $jurusan)
+                        <option value="{{ $jurusan->id }}" {{ request('jurusan_id') == $jurusan->id ? 'selected' : '' }}>
+                            {{ $jurusan->nama_jurusan ?? $jurusan->nama }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
         </div>
 
-        <div class="w-full sm:w-44">
-            <select name="status" onchange="this.form.submit()" class="w-full bg-gray-50 text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-600 cursor-pointer">
-                <option value="">Semua Status</option>
-                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                <option value="proses" {{ request('status') == 'proses' ? 'selected' : '' }}>Proses</option>
-                <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
-            </select>
+        <!-- Search Input & Status Filter -->
+        <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </span>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama peminjam..." class="w-full bg-gray-50 text-xs pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-emerald-600 text-gray-600 placeholder-gray-400">
+            </div>
+
+            <div class="w-full sm:w-48">
+                <select name="status" onchange="this.form.submit()" class="w-full bg-gray-50 text-xs text-gray-500 border border-gray-200 rounded-lg px-3 py-2.5 focus:outline-none focus:border-emerald-600 cursor-pointer">
+                    <option value="">Semua Status</option>
+                    <option value="menunggu_verifikasi" {{ request('status') == 'menunggu_verifikasi' ? 'selected' : '' }}>Menunggu Verifikasi</option>
+                    <option value="sedang_berlangsung" {{ request('status') == 'sedang_berlangsung' ? 'selected' : '' }}>Sedang Berlangsung</option>
+                    <option value="terlambat" {{ request('status') == 'terlambat' ? 'selected' : '' }}>Terlambat</option>
+                    <option value="selesai" {{ request('status') == 'selesai' ? 'selected' : '' }}>Selesai</option>
+                </select>
+            </div>
         </div>
+
     </form>
 
-    <!-- Table Section Card -->
+    <!-- Table Section Card (KEMBALI DIMUNCULKAN) -->
     <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <!-- Table Title Header -->
         <div class="p-4 border-b border-gray-100 flex items-center space-x-3">
@@ -77,12 +109,12 @@
                                 </p>
                             </td>
 
-                            <!-- Sarana Prasarana (Iterasi Detail Peminjaman) -->
+                            <!-- Sarana Prasarana -->
                             <td class="py-4 px-4 align-top">
                                 <ul class="space-y-1">
                                     @forelse($pengembalian->peminjaman->detailPeminjamans ?? [] as $detail)
                                         <li class="font-semibold text-gray-800">
-                                            • {{ $detail->sarana->nama_sarana ?? $detail->sarana->nama ?? 'Sarana/Barang' }} 
+                                            - {{ $detail->sarana->nama_sarana ?? $detail->sarana->nama ?? 'Sarana/Barang' }} 
                                             <span class="text-gray-500 font-normal">({{ $detail->jumlah ?? 1 }} Unit)</span>
                                         </li>
                                     @empty
@@ -97,45 +129,42 @@
                             </td>
 
                             <!-- Kolom Status -->
-<td class="py-4 px-4 align-top text-center">
-    @switch($pengembalian->status)
-        @case('selesai')
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                Selesai
-            </span>
-            @break
-        @case('sedang_berlangsung')
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-500 border border-sky-200">
-                Sedang Berlangsung
-            </span>
-            @break
-        @case('terlambat')
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-200">
-                Terlambat
-            </span>
-            @break
-        @default
-            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200">
-                Menunggu Verifikasi
-            </span>
-    @endswitch
-</td>
+                            <td class="py-4 px-4 align-top text-center">
+                                @switch($pengembalian->status)
+                                    @case('selesai')
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                            Selesai
+                                        </span>
+                                        @break
+                                    @case('sedang_berlangsung')
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-500 border border-sky-200">
+                                            Sedang Berlangsung
+                                        </span>
+                                        @break
+                                    @case('terlambat')
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-200">
+                                            Terlambat
+                                        </span>
+                                        @break
+                                    @default
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-600 border border-amber-200">
+                                            Menunggu Verifikasi
+                                        </span>
+                                @endswitch
+                            </td>
 
                             <!-- Aksi -->
-<!-- Aksi -->
-<td class="py-4 px-4 align-top text-center">
-    @if(strtolower($pengembalian->status) == 'selesai')
-        <!-- Jika sudah selesai, tampilkan tombol Detail -->
-        <a href="{{ route('admin.pengembalian.show', $pengembalian->id) }}" class="inline-block px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-xs font-medium transition border border-gray-200">
-            Detail
-        </a>
-    @else
-        <!-- Jika belum selesai / menunggu verifikasi, tampilkan tombol Verifikasi -->
-        <a href="{{ route('admin.pengembalian.verify', $pengembalian->id) }}" class="inline-block px-3.5 py-1.5 bg-[#0b3323] hover:bg-emerald-900 text-white rounded-md text-xs font-medium transition shadow-sm">
-            Verifikasi
-        </a>
-    @endif
-</td>
+                            <td class="py-4 px-4 align-top text-center">
+                                @if(strtolower($pengembalian->status) == 'selesai')
+                                    <a href="{{ route('admin.pengembalian.show', $pengembalian->id) }}" class="inline-block px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-xs font-medium transition border border-gray-200">
+                                        Detail
+                                    </a>
+                                @else
+                                    <a href="{{ route('admin.pengembalian.verify', $pengembalian->id) }}" class="inline-block px-3.5 py-1.5 bg-[#0b3323] hover:bg-emerald-900 text-white rounded-md text-xs font-medium transition shadow-sm">
+                                        Verifikasi
+                                    </a>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>

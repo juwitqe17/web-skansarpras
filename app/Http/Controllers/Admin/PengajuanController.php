@@ -117,7 +117,7 @@ class PengajuanController extends Controller
     ]);
 }
 
-    /**
+   /**
      * Setujui pengajuan.
      */
     public function approve(Peminjaman $peminjaman)
@@ -135,17 +135,26 @@ class PengajuanController extends Controller
             ]);
 
             Persetujuan::create([
-                'peminjaman_id' => $peminjaman->id,
-                'admin_id' => auth()->id(),
-                'status' => 'disetujui',
+                'peminjaman_id'       => $peminjaman->id,
+                'admin_id'            => auth()->id(),
+                'status'              => 'disetujui',
                 'tanggal_persetujuan' => now(),
-                'alasan' => null,
+                'alasan'              => null,
+            ]);
+
+            // Tambahkan 'kelayakan' => null di sini
+            \App\Models\Pengembalian::create([
+                'peminjaman_id'        => $peminjaman->id,
+                'admin_id'             => auth()->id(),
+                'tanggal_pengembalian' => now(),
+                'kelayakan'            => null, // <--- Agar tidak error saat insert awal
+                'status'               => 'menunggu_verifikasi',
             ]);
         });
 
         return redirect()
             ->back()
-            ->with('success', 'Pengajuan berhasil disetujui.');
+            ->with('success', 'Pengajuan berhasil disetujui dan masuk ke manajemen pengembalian.');
     }
 
     /**

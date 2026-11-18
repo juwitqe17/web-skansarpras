@@ -18,7 +18,7 @@
     <!-- Card Pembungkus Utama -->
     <div class="bg-white border border-gray-200/90 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
 
-        <!-- Baris 1: Tiga Card Atas (Peminjam, Barang, Waktu Kembali) - DIPASTIKAN BERJAJAR KE SAMPING -->
+        <!-- Baris 1: Tiga Card Atas (Peminjam, Barang, Waktu Kembali) -->
         <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;">
             
             <!-- 1. Card Peminjam -->
@@ -121,20 +121,33 @@
             </p>
         </div>
 
-        <!-- Baris 4: Tiga Kotak Indikator Bawah (Berjajar ke Samping) -->
+        <!-- Baris 4: Tiga Kotak Indikator Bawah (Dinamis sesuai centangan) -->
+        @php
+            $kelayakan = $pengembalian->kelayakan ?? [];
+        @endphp
         <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;">
+            
             <div class="bg-white border border-gray-200/80 rounded-2xl p-4 text-center space-y-1 shadow-2xs">
                 <p class="text-[11px] font-semibold text-gray-400">Komponen Fisik</p>
-                <p class="text-xs font-bold text-gray-900">Lengkap</p>
+                <p class="text-xs font-bold {{ in_array('aksesoris_lengkap', $kelayakan) ? 'text-gray-900' : 'text-rose-500' }}">
+                    {{ in_array('aksesoris_lengkap', $kelayakan) ? 'Lengkap' : 'Tidak Lengkap' }}
+                </p>
             </div>
+
             <div class="bg-white border border-gray-200/80 rounded-2xl p-4 text-center space-y-1 shadow-2xs">
                 <p class="text-[11px] font-semibold text-gray-400">Fungsi Unit</p>
-                <p class="text-xs font-bold text-gray-900">Normal</p>
+                <p class="text-xs font-bold {{ in_array('fungsi_normal', $kelayakan) ? 'text-gray-900' : 'text-rose-500' }}">
+                    {{ in_array('fungsi_normal', $kelayakan) ? 'Normal' : 'Tidak Normal' }}
+                </p>
             </div>
+
             <div class="bg-white border border-gray-200/80 rounded-2xl p-4 text-center space-y-1 shadow-2xs">
                 <p class="text-[11px] font-semibold text-gray-400">Kebersihan</p>
-                <p class="text-xs font-bold text-gray-900">Bersih</p>
+                <p class="text-xs font-bold {{ in_array('fisik_bersih', $kelayakan) ? 'text-gray-900' : 'text-rose-500' }}">
+                    {{ in_array('fisik_bersih', $kelayakan) ? 'Bersih' : 'Kurang Bersih' }}
+                </p>
             </div>
+
         </div>
 
     </div>

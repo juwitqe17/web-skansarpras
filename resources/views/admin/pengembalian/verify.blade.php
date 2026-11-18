@@ -61,7 +61,9 @@
                                     @if(isset($detail->sarana->gambar))
                                         <img src="{{ asset('storage/' . $detail->sarana->gambar) }}" alt="Barang" class="w-full h-full object-cover">
                                     @else
-                                        <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                        <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                        </svg>
                                     @endif
                                 </div>
                                 <div class="overflow-hidden">
@@ -85,7 +87,9 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-[#d1fae5] text-[#065f46] flex items-center justify-center shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
                         </div>
                         <div class="overflow-hidden">
                             <h4 class="text-xs font-extrabold text-gray-900 truncate">
@@ -151,21 +155,23 @@
                 </div>
             </div>
 
-            <!-- Bagian Catatan Petugas (DIKEMBALIKAN) -->
+            <!-- Bagian Catatan Petugas -->
             <div class="space-y-2 mb-8">
                 <label for="catatan" class="block text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">CATATAN PETUGAS (OPSIONAL)</label>
                 <textarea id="catatan" name="catatan" rows="4" placeholder="Masukkan Catatan..." 
                           class="w-full bg-[#f8fafc] border border-gray-200 rounded-2xl p-4 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0A261D] transition resize-none"></textarea>
             </div>
 
-            <!-- Tombol Aksi Bawah (DIKEMBALIKAN) -->
+            <!-- Tombol Aksi Bawah -->
             <div class="flex items-center justify-between pt-4 border-t border-gray-100">
                 <a href="{{ route('admin.pengembalian.index') }}" class="px-6 py-2.5 bg-white border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
                     Batal
                 </a>
                 
                 <button type="submit" class="px-6 py-2.5 bg-[#0A261D] rounded-xl text-xs font-semibold text-white hover:bg-opacity-90 flex items-center gap-2 transition shadow-sm">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
                     Simpan & Selesai
                 </button>
             </div>

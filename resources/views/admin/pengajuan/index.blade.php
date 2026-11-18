@@ -45,9 +45,8 @@
         </div>
     @endif
 
-    <!-- Form Filter & Statistik Utama (Sesuai Gambar) -->
+    <!-- Form Filter & Statistik Utama -->
     <form method="GET" action="{{ route('admin.pengajuan.index') }}" id="filterForm">
-        <!-- Simpan nilai status & search agar tetap terbawa saat filter jurusan berubah -->
         <input type="hidden" name="status" value="{{ request('status') }}">
         <input type="hidden" name="search" value="{{ request('search') }}">
 
@@ -68,7 +67,7 @@
                 </div>
 
                 <div class="w-full sm:w-72">
-                    <select name="jurusan_id" onchange="this.form.submit()" class="w-full text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-600 font-medium">
+                    <select name="jurusan_id" onchange="this.form.submit()" class="w-full text-xs text-gray-700 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:border-emerald-600 font-medium cursor-pointer">
                         <option value="">Semua Departemen / Jurusan</option>
                         @foreach($jurusans as $jurusan)
                             <option value="{{ $jurusan->id }}" {{ request('jurusan_id') == $jurusan->id ? 'selected' : '' }}>
@@ -81,7 +80,7 @@
 
             <!-- Grid Statistik (4 Cards) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Card 1: Jumlah Pengajuan -->
+                <!-- Card 1 -->
                 <div class="p-4 rounded-xl border border-gray-200 bg-white flex flex-col justify-between space-y-2">
                     <span class="text-xs font-semibold text-gray-500">Jumlah Pengajuan</span>
                     <div class="flex items-end justify-between">
@@ -90,7 +89,7 @@
                     </div>
                 </div>
 
-                <!-- Card 2: Disetujui Hari Ini -->
+                <!-- Card 2 -->
                 <div class="p-4 rounded-xl border border-gray-200 bg-white flex flex-col justify-between space-y-2">
                     <span class="text-xs font-semibold text-gray-500">Disetujui Hari ini</span>
                     <div class="flex items-end justify-between">
@@ -99,7 +98,7 @@
                     </div>
                 </div>
 
-                <!-- Card 3: Ditolak/Dibatalkan -->
+                <!-- Card 3 -->
                 <div class="p-4 rounded-xl border border-gray-200 bg-white flex flex-col justify-between space-y-2">
                     <span class="text-xs font-semibold text-gray-500">Ditolak/Dibatalkan</span>
                     <div class="flex items-end justify-between">
@@ -108,7 +107,7 @@
                     </div>
                 </div>
 
-                <!-- Card 4: Menunggu -->
+                <!-- Card 4 -->
                 <div class="p-4 rounded-xl border border-gray-200 bg-white flex flex-col justify-between space-y-2">
                     <span class="text-xs font-semibold text-gray-500">Menunggu</span>
                     <div class="flex items-end justify-between">
@@ -123,7 +122,6 @@
 
     <!-- Search & Status Filter Controls -->
     <form method="GET" action="{{ route('admin.pengajuan.index') }}" class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col sm:flex-row gap-3">
-        <!-- Pertahankan jurusan_id jika sedang difilter -->
         <input type="hidden" name="jurusan_id" value="{{ request('jurusan_id') }}">
 
         <div class="relative flex-1">
@@ -134,7 +132,7 @@
         </div>
 
         <div class="w-full sm:w-48">
-            <select name="status" onchange="this.form.submit()" class="w-full text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-600">
+            <select name="status" onchange="this.form.submit()" class="w-full text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-600 cursor-pointer">
                 <option value="">Status</option>
                 <option value="menunggu" {{ request('status') == 'menunggu' ? 'selected' : '' }}>Menunggu</option>
                 <option value="disetujui" {{ request('status') == 'disetujui' ? 'selected' : '' }}>Disetujui</option>
@@ -213,9 +211,9 @@
                                         <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Disetujui
                                     </span>
                                 @elseif($item->status == 'selesai')
-                                    <span class="bg-blue-100 text-blue-800 text-[10px] font-semibold px-2 py-1 rounded-full inline-flex items-center gap-1">
-                                        <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Selesai
-                                    </span>
+    <span class="bg-blue-100 text-blue-800 text-[10px] font-semibold px-2 py-1 rounded-full inline-flex items-center gap-1">
+        <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Selesai
+    </span>
                                 @else
                                     <span class="bg-red-100 text-red-700 text-[10px] font-semibold px-2 py-1 rounded-full inline-flex items-center gap-1">
                                         <svg class="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg> Ditolak
@@ -232,11 +230,12 @@
                                     </button>
 
                                     @if($item->status == 'menunggu')
-                                        <!-- Form Setujui -->
-                                        <form action="{{ route('admin.pengajuan.approve', $item->id) }}" method="POST">
+                                        <!-- Form Setujui (Diperbaiki menggunakan $item->id) -->
+                                        <form action="{{ route('admin.pengajuan.approve', $item->id) }}" method="POST" class="inline">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit" onclick="return confirm('Apakah Anda yakin ingin menyetujui pengajuan ini?')" class="bg-[#0F392B] text-white text-[10px] font-medium px-2.5 py-1 rounded hover:bg-emerald-800 transition-colors">
+                                            
+                                            <button type="submit" onclick="return confirm('Yakin ingin menyetujui pengajuan ini?')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-medium transition">
                                                 Setujui
                                             </button>
                                         </form>
