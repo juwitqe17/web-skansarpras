@@ -269,10 +269,10 @@
                 Sedang Berlangsung
             </span>
 
-            <span class="flex items-center gap-2">
+            {{-- <span class="flex items-center gap-2">
                 <span class="h-3 w-3 rounded-full bg-blue-500"></span>
                 Terjadwal
-            </span>
+            </span> --}}
 
             <span class="flex items-center gap-2">
                 <span class="h-3 w-3 rounded-full bg-gray-400"></span>

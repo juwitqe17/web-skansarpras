@@ -7,8 +7,8 @@
     {{-- SIDEBAR ADMIN --}}
     @include('partials.sidebar-admin')
 
-    {{-- AREA KANAN --}}
-    <div class="ml-[295px] min-h-screen">
+    {{-- AREA KANAN (Disesuaikan dengan lebar sidebar baru w-[264px]) --}}
+    <div class="ml-[264px] min-h-screen">
 
         {{-- NAVBAR ADMIN --}}
         @include('partials.navbar-admin')
