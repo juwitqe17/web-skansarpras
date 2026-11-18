@@ -21,7 +21,7 @@
                     <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Total Sarana</span>
                 </div>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-3xl font-bold text-gray-900">1.240</span>
+                    <span class="text-3xl font-bold text-gray-900">{{ number_format($totalSarana ?? 0, 0, ',', '.') }}</span>
                     <span class="text-xs text-gray-500">unit</span>
                 </div>
             </div>
@@ -37,7 +37,7 @@
                     <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Sarana Tersedia</span>
                 </div>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-3xl font-bold text-gray-900">230</span>
+                    <span class="text-3xl font-bold text-gray-900">{{ number_format($saranaTersedia ?? 0, 0, ',', '.') }}</span>
                     <span class="text-xs text-gray-500">unit</span>
                 </div>
             </div>
@@ -53,7 +53,7 @@
                     <span class="text-xs font-semibold uppercase tracking-wider text-gray-500">Sedang Dipinjam</span>
                 </div>
                 <div class="flex items-baseline space-x-2">
-                    <span class="text-3xl font-bold text-gray-900">1.010</span>
+                    <span class="text-3xl font-bold text-gray-900">{{ number_format($sedangDipinjam ?? 0, 0, ',', '.') }}</span>
                     <span class="text-xs text-gray-500">unit</span>
                 </div>
             </div>
@@ -69,12 +69,12 @@
                     <span class="text-xs font-medium leading-tight">Pengajuan<br><span class="text-gray-300 font-normal">(Menunggu Persetujuan)</span></span>
                 </div>
                 <div class="flex items-baseline space-x-2 my-1">
-                    <span class="text-3xl font-bold">34</span>
+                    <span class="text-3xl font-bold">{{ $pengajuanMenunggu ?? 0 }}</span>
                     <span class="text-xs text-emerald-200">pengajuan</span>
                 </div>
             </div>
             <div class="text-right mt-2">
-                <a href="#" class="text-xs text-emerald-200 hover:text-white flex items-center justify-end space-x-1 transition-colors">
+                <a href="{{ route('admin.pengajuan.index') }}" class="text-xs text-emerald-200 hover:text-white flex items-center justify-end space-x-1 transition-colors">
                     <span>Lihat antrean</span>
                     <span>&gt;</span>
                 </a>
@@ -106,25 +106,22 @@
                     <span>Tenggat Pengembalian</span>
                 </div>
                 
-                <!-- Item Overdue -->
-                <div class="p-2.5 bg-gray-50 rounded-lg border border-gray-100 text-xs space-y-1">
-                    <div class="flex items-center space-x-2">
-                        <span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Overdue</span>
-                        <span class="font-bold text-gray-800">Proyektor Epson EB-X400</span>
+                @forelse($tenggatPengembalian ?? [] as $item)
+                    <div class="p-2.5 bg-gray-50 rounded-lg border border-gray-100 text-xs space-y-1">
+                        <div class="flex items-center space-x-2">
+                            @if($item->status == 'overdue')
+                                <span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Overdue</span>
+                            @else
+                                <span class="bg-yellow-400 text-gray-900 text-[10px] font-bold px-1.5 py-0.5 rounded">Hari ini</span>
+                            @endif
+                            <span class="font-bold text-gray-800">{{ $item->sarana->nama_barang ?? ($item->sarana->nama ?? 'Sarana') }}</span>
+                        </div>
+                        <p class="text-gray-500 text-[11px]"><span class="font-medium text-gray-700">Peminjam :</span> {{ $item->peminjam->name ?? 'Peminjam' }}</p>
+                        <p class="text-gray-500 text-[11px]"><span class="font-medium text-gray-700">Tenggat :</span> {{ \Carbon\Carbon::parse($item->tanggal_kembali ?? $item->created_at)->translatedFormat('d M Y, H.i') }} WIB</p>
                     </div>
-                    <p class="text-gray-500 text-[11px]"><span class="font-medium text-gray-700">Peminjam :</span> Budi (XII-RPL1)</p>
-                    <p class="text-gray-500 text-[11px]"><span class="font-medium text-gray-700">Status :</span> Terlambat 1 Hari</p>
-                </div>
-
-                <!-- Item Hari ini -->
-                <div class="p-2.5 bg-gray-50 rounded-lg border border-gray-100 text-xs space-y-1">
-                    <div class="flex items-center space-x-2">
-                        <span class="bg-yellow-400 text-gray-900 text-[10px] font-bold px-1.5 py-0.5 rounded">Hari ini</span>
-                        <span class="font-bold text-gray-800">Laptop ASUS ROG</span>
-                    </div>
-                    <p class="text-gray-500 text-[11px]"><span class="font-medium text-gray-700">Peminjam :</span> Aris (XI-RPL1)</p>
-                    <p class="text-gray-500 text-[11px]"><span class="font-medium text-gray-700">Tenggat :</span> 15.00 WIB</p>
-                </div>
+                @empty
+                    <p class="text-xs text-gray-400 text-center py-2">Tidak ada tenggat pengembalian terdekat.</p>
+                @endforelse
             </div>
 
             <!-- Aktivitas Terbaru -->
@@ -137,18 +134,17 @@
                 </div>
 
                 <div class="space-y-3 text-xs pl-2 relative border-l-2 border-gray-200 ml-1">
-                    <div class="relative pl-3">
-                        <span class="w-2.5 h-2.5 bg-green-500 rounded-full absolute -left-[18px] top-1"></span>
-                        <p class="text-gray-700"><span class="font-bold">[10.15] Anto (RPL)</span> mengembalikan 1 Proyektor Epson</p>
-                    </div>
-                    <div class="relative pl-3">
-                        <span class="w-2.5 h-2.5 bg-yellow-400 rounded-full absolute -left-[18px] top-1"></span>
-                        <p class="text-gray-700"><span class="font-bold">[09.30] Bu Siti (AP)</span> mengajukan 2 Tenda Kegiatan</p>
-                    </div>
-                    <div class="relative pl-3">
-                        <span class="w-2.5 h-2.5 bg-green-500 rounded-full absolute -left-[18px] top-1"></span>
-                        <p class="text-gray-700"><span class="font-bold">[08.00] Admin</span> menyetujui Sound System</p>
-                    </div>
+                    @forelse($aktivitasTerbaru ?? [] as $akt)
+                        <div class="relative pl-3">
+                            <span class="w-2.5 h-2.5 {{ $akt->status == 'dipinjam' ? 'bg-green-500' : 'bg-yellow-400' }} rounded-full absolute -left-[18px] top-1"></span>
+                            <p class="text-gray-700">
+                                <span class="font-bold">[{{ $akt->created_at->format('H.i') }}] {{ $akt->peminjam->name ?? 'User' }}</span> 
+                                {{ $akt->status == 'dipinjam' ? 'meminjam' : 'mengajukan' }} {{ $akt->sarana->nama_barang ?? 'Sarana' }}
+                            </p>
+                        </div>
+                    @empty
+                        <p class="text-xs text-gray-400 text-center py-2">Belum ada aktivitas terbaru.</p>
+                    @endforelse
                 </div>
             </div>
 
@@ -163,15 +159,15 @@
                 <div class="space-y-1.5 text-xs">
                     <div class="flex justify-between items-center text-gray-700">
                         <span class="font-bold">Rusak :</span>
-                        <span class="text-gray-600">15 barang</span>
+                        <span class="text-gray-600">{{ $kondisiRusak ?? 0 }} barang</span>
                     </div>
                     <div class="flex justify-between items-center text-gray-700">
                         <span class="font-bold">Perbaikan :</span>
-                        <span class="text-gray-600">5 barang</span>
+                        <span class="text-gray-600">{{ $kondisiPerbaikan ?? 0 }} barang</span>
                     </div>
                     <div class="flex justify-between items-center text-gray-700">
                         <span class="font-bold">Hilang :</span>
-                        <span class="text-gray-600">2 barang</span>
+                        <span class="text-gray-600">{{ $kondisiHilang ?? 0 }} barang</span>
                     </div>
                 </div>
             </div>
@@ -189,21 +185,25 @@
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Juni', 'Juli', 'Agustus'],
+                labels: @json($bulan ?? ['Juni', 'Juli', 'Agustus']),
                 datasets: [
                     {
                         label: 'Jumlah Peminjam',
-                        data: [400, 720, 30],
+                        data: @json($jumlahPeminjam ?? [0, 0, 0]),
                         backgroundColor: '#A2A392',
-                        borderRadius: 2,
+                        hoverBackgroundColor: '#898A7B',
+                        borderRadius: 4,
+                        borderSkipped: false,
                         barPercentage: 0.5,
                         categoryPercentage: 0.6
                     },
                     {
                         label: 'Sisa Stok Tersedia',
-                        data: [610, 150, 330],
+                        data: @json($sisaStok ?? [$saranaTersedia ?? 104, $saranaTersedia ?? 104, $saranaTersedia ?? 104]),
                         backgroundColor: '#A2D28A',
-                        borderRadius: 2,
+                        hoverBackgroundColor: '#89C26F',
+                        borderRadius: 4,
+                        borderSkipped: false,
                         barPercentage: 0.5,
                         categoryPercentage: 0.6
                     }
@@ -212,34 +212,81 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 600,
+                    easing: 'easeOutCubic'
+                },
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                onHover: (event, chartElement) => {
+                    event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
                         labels: {
                             usePointStyle: true,
-                            boxWidth: 10,
+                            pointStyle: 'circle',
+                            boxWidth: 8,
                             padding: 20,
-                            font: {
-                                size: 12
-                            }
+                            font: { size: 12, weight: '600' },
+                            color: '#374151'
                         }
+                    },
+                    // Popup Tooltip Putih yang Rapi & Posisi Mengarah ke Bawah
+                    tooltip: {
+                        enabled: true,
+                        position: 'nearest',       // Mengikuti posisi kursor/bar secara presisi
+                        yAlign: 'top',             // Mengatur panah tooltip mengarah ke bawah
+                        backgroundColor: '#FFFFFF',
+                        titleColor: '#0F261D',
+                        bodyColor: '#374151',
+                        borderColor: '#E5E7EB',
+                        borderWidth: 1,
+                        padding: {
+                            top: 10,
+                            bottom: 12,
+                            left: 14,
+                            right: 14
+                        },
+                        cornerRadius: 10,
+                        boxPadding: 6,
+                        usePointStyle: true,
+                        titleFont: { size: 12, weight: '700' },
+                        bodyFont: { size: 11, weight: '500' },
+                        callbacks: {
+                            title: function(context) {
+                                return 'Bulan ' + context[0].label;
+                            },
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                let value = context.raw || 0;
+                                return `${label}: ${value} unit`;
+                            },
+                            footer: function(context) {
+                                let totalSarana = {{ $totalSarana ?? 104 }};
+                                let stokTersedia = context.find(c => c.dataset.label === 'Sisa Stok Tersedia')?.raw || 0;
+                                let stokTidakTersedia = Math.max(0, totalSarana - stokTersedia);
+
+                                return `Tidak Tersedia: ${stokTidakTersedia} unit`;
+                            }
+                        },
+                        footerColor: '#DC2626',      // Warna merah tegas untuk status Tidak Tersedia
+                        footerFont: { size: 11, weight: '600' },
+                        footerMarginTop: 8
                     }
                 },
                 scales: {
                     x: {
-                        grid: {
-                            display: false
-                        }
+                        grid: { display: false },
+                        ticks: { font: { size: 12, weight: '600' }, color: '#4B5563' }
                     },
                     y: {
                         beginAtZero: true,
-                        max: 800,
-                        ticks: {
-                            stepSize: 200
-                        },
-                        grid: {
-                            color: '#E5E7EB'
-                        }
+                        ticks: { precision: 0, color: '#6B7280', font: { size: 11 } },
+                        grid: { color: '#E5E7EB' }
                     }
                 }
             }

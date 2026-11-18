@@ -60,31 +60,29 @@ class PengembalianController extends Controller
     }
 
     /**
-     * Proses pengembalian.
+     * Menampilkan form verifikasi pengembalian.
+     */
+    public function verify(Pengembalian $pengembalian)
+    {
+        return view('admin.pengembalian.verify', compact('pengembalian'));
+    }
+
+    /**
+     * Memproses dan menyimpan data verifikasi pengembalian.
      */
     public function process(Request $request, Pengembalian $pengembalian)
     {
-        $validated = $request->validate([
-            'kondisi_pengembalian' => 'required|string',
-            'catatan' => 'nullable|string',
+        $request->validate([
+            'kondisi_pengembalian' => 'required',
+            'catatan'              => 'nullable|string',
         ]);
-
-        if ($pengembalian->status === 'selesai') {
-            return redirect()
-                ->back()
-                ->with('error', 'Pengembalian ini sudah diproses.');
-        }
 
         $pengembalian->update([
-            'admin_id' => auth()->id(),
-            'tanggal_pengembalian' => now(),
-            'kondisi_pengembalian' => $validated['kondisi_pengembalian'],
-            'status' => 'selesai',
-            'catatan' => $validated['catatan'] ?? null,
+            'kondisi_pengembalian' => $request->kondisi_pengembalian,
+            'catatan'              => $request->catatan,
+            'status'               => 'selesai', // Status otomatis jadi 'selesai' setelah diverifikasi
         ]);
 
-        return redirect()
-            ->back()
-            ->with('success', 'Pengembalian berhasil diproses.');
+        return redirect()->route('admin.pengembalian.index')->with('success', 'Pengembalian barang berhasil diverifikasi.');
     }
 }
