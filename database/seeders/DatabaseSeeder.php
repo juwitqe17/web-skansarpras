@@ -475,5 +475,9 @@ class DatabaseSeeder extends Seeder
                 'catatan' => 'Barang dikembalikan dalam kondisi baik.',
             ]
         );
+        // User::factory()->create([
+        //     'name' => 'Test User',
+        //     'email' => 'test@example.com',
+        // ]);
     }
 }

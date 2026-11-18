@@ -63,9 +63,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('/pengembalian/{pengembalian}', [AdminPengembalianController::class, 'show'])->name('pengembalian.show');
         Route::get('/pengembalian/{pengembalian}/verify', [AdminPengembalianController::class, 'verify'])->name('pengembalian.verify');
         Route::patch('/pengembalian/{pengembalian}/process', [AdminPengembalianController::class, 'process'])->name('pengembalian.process');
-       
+
         Route::get('/jadwal', [JadwalPenggunaanController::class, 'index'])->name('jadwal.index');
         Route::get('/jadwal/{jadwalPenggunaan}', [JadwalPenggunaanController::class, 'show'])->name('jadwal.show');
+        Route::get('/jadwal/export-pdf', [JadwalPenggunaanController::class, 'exportPdf'])->name('admin.jadwal.export-pdf');
 
     });
 

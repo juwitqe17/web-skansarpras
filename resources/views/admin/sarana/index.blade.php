@@ -117,7 +117,7 @@
 
                 <!-- Filter Kondisi -->
                 <select name="kondisi" onchange="this.form.submit()" class="bg-gray-50 border border-gray-200 text-sm rounded-xl px-3 py-2 text-gray-600 focus:ring-2 focus:ring-emerald-800">
-                    <option value="">Kondisi</option>
+                    <option value="">Semua Kondisi</option>
                     <option value="baik" {{ request('kondisi') == 'baik' ? 'selected' : '' }}>Baik</option>
                     <option value="rusak_ringan" {{ request('kondisi') == 'rusak_ringan' ? 'selected' : '' }}>Rusak Ringan</option>
                     <option value="rusak_berat" {{ request('kondisi') == 'rusak_berat' ? 'selected' : '' }}>Rusak Berat</option>
@@ -127,7 +127,7 @@
                 <select name="status" onchange="this.form.submit()" class="bg-gray-50 border border-gray-200 text-sm rounded-xl px-3 py-2 text-gray-600 focus:ring-2 focus:ring-emerald-800">
                     <option value="">Status</option>
                     <option value="tersedia" {{ request('status') == 'tersedia' ? 'selected' : '' }}>Tersedia</option>
-                    <option value="dipinjam" {{ request('status') == 'dipinjam' ? 'selected' : '' }}>Dipinjam</option>
+                    <option value="dipinjam" {{ request('status') == 'dipinjam' ? 'selected' : '' }}>Tidak Tersedia</option>
                 </select>
             </form>
 
@@ -189,8 +189,32 @@
                                         <form action="{{ route('admin.sarana.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus sarana ini?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="p-1.5 text-gray-500 hover:text-red-600 rounded-lg hover:bg-gray-100">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            <button
+                                                type="button"
+                                                onclick="openDeleteModal(
+                                                    {{ $item->id }},
+                                                    @js($item->nama_sarana),
+                                                    @js($item->kode_sarana),
+                                                    @js($item->jumlah),
+                                                    @js($item->jumlah_tersedia),
+                                                    @js($item->kondisi),
+                                                    @js($item->gambar ? asset('storage/' . $item->gambar) : null)
+                                                )"
+                                                class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
+                                            >
+                                            <svg
+                                                class="h-5 w-5"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                />
+                                            </svg>
                                             </button>
                                         </form>
                                     </div>
@@ -205,6 +229,7 @@
                         @endforelse
                     </tbody>
                 </table>
+                @include('admin.sarana.partials.delete-modal')
             </div>
 
             <!-- Pagination -->
@@ -220,3 +245,4 @@
     @endif
 </div>
 @endsection
+
