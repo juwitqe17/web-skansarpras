@@ -8,8 +8,8 @@
         <p class="text-sm text-gray-500">
             Inventaris peralatan dan perangkat kejuruan. Pastikan untuk memilih kategori jurusan terlebih dahulu sebelum menambahkan data sarana.
         </p>
-        <a href="{{ route('admin.sarana.index', ['jurusan_id' => $selectedJurusan->id]) }}" 
-           class="inline-flex items-center gap-1 mt-3 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+        <a href="{{ route('admin.sarana.index', ['jurusan_id' => $selectedJurusan->id]) }}"
+           class="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             Kembali
         </a>
@@ -42,7 +42,7 @@
                 <!-- Nama Sarana -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Sarana / Prasarana</label>
-                    <input type="text" name="nama_sarana" value="{{ old('nama_sarana') }}" placeholder="Cth: Laptop Axioo Hype 1" 
+                    <input type="text" name="nama_sarana" value="{{ old('nama_sarana') }}" placeholder="Cth: Laptop Axioo Hype 1"
                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-800 focus:outline-none transition @error('nama_sarana') border-red-500 @enderror" required>
                     @error('nama_sarana') <span class="text-xs text-red-500 mt-1">{{ $message }}</span> @enderror
                 </div>
@@ -50,7 +50,7 @@
                 <!-- Kode Sarana -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Kode Sarana / Prasarana</label>
-                    <input type="text" name="kode_sarana" value="{{ old('kode_sarana') }}" placeholder="Cth: RPL-NET-001" 
+                    <input type="text" name="kode_sarana" value="{{ old('kode_sarana') }}" placeholder="Cth: RPL-NET-001"
                            class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-800 focus:outline-none transition @error('kode_sarana') border-red-500 @enderror" required>
                     @error('kode_sarana') <span class="text-xs text-red-500 mt-1">{{ $message }}</span> @enderror
                 </div>
@@ -59,13 +59,13 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="sm:col-span-1">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Jumlah Unit</label>
-                        <input type="number" name="jumlah" value="{{ old('jumlah', 1) }}" min="1" 
+                        <input type="number" name="jumlah" value="{{ old('jumlah', 1) }}" min="1"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-800 focus:outline-none transition @error('jumlah') border-red-500 @enderror" required>
                         @error('jumlah') <span class="text-xs text-red-500 mt-1">{{ $message }}</span> @enderror
                     </div>
                     <div class="sm:col-span-2">
                         <label class="block text-sm font-semibold text-gray-700 mb-1">Lokasi</label>
-                        <input type="text" name="lokasi" value="{{ old('lokasi') }}" placeholder="Cth: Ruang Toolman RPL Gedung E-204" 
+                        <input type="text" name="lokasi" value="{{ old('lokasi') }}" placeholder="Cth: Ruang Toolman RPL Gedung E-204"
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-800 focus:outline-none transition @error('lokasi') border-red-500 @enderror" required>
                         @error('lokasi') <span class="text-xs text-red-500 mt-1">{{ $message }}</span> @enderror
                     </div>
@@ -74,7 +74,7 @@
                 <!-- Deskripsi -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-1">Deskripsi Mengenai Sarana / Prasarana</label>
-                    <textarea name="deskripsi" rows="4" placeholder="Deskripsi..." 
+                    <textarea name="deskripsi" rows="4" placeholder="Deskripsi..."
                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-emerald-800 focus:outline-none transition">{{ old('deskripsi') }}</textarea>
                 </div>
             </div>

@@ -1,16 +1,16 @@
 <?php
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\JadwalPenggunaanController;
 use App\Http\Controllers\Admin\JurusanController;
 use App\Http\Controllers\Admin\PengajuanController as AdminPengajuanController;
 use App\Http\Controllers\Admin\PengembalianController as AdminPengembalianController;
 use App\Http\Controllers\Admin\SaranaController as AdminSaranaController;
-
-use App\Http\Controllers\Peminjam\SaranaController as PeminjamSaranaController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Peminjam\PengajuanController as PeminjamPengajuanController;
 use App\Http\Controllers\Peminjam\PengembalianController as PeminjamPengembalianController;
 use App\Http\Controllers\Peminjam\RiwayatController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Peminjam\SaranaController as PeminjamSaranaController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -39,6 +39,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+        Route::get('/user', [UserController::class, 'index'])->name('user.index');
+        Route::get('/user/create', [UserController::class, 'create'])->name('user.create');
+        Route::post('/user', [UserController::class, 'store'])->name('user.store');
+        Route::get('/user/{user}/edit', [UserController::class, 'edit'])->name('user.edit');
+        Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
+        Route::delete('/user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+        Route::get('/user/export', [UserController::class, 'export'])->name('user.export');
+        Route::get('/user/template', [UserController::class, 'downloadTemplate'])->name('user.template');
+        Route::post('/user/import', [UserController::class, 'import'])->name('user.import');
+
         Route::get('/jurusan', [JurusanController::class, 'index'])->name('jurusan.index');
         Route::get('/jurusan/create', [JurusanController::class, 'create'])->name('jurusan.create');
         Route::post('/jurusan', [JurusanController::class, 'store'])->name('jurusan.store');
@@ -53,6 +63,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::put('/sarana/{sarana}', [AdminSaranaController::class, 'update'])->name('sarana.update');
         Route::delete('/sarana/{sarana}', [AdminSaranaController::class, 'destroy'])->name('sarana.destroy');
         Route::get('/sarana/export', [AdminSaranaController::class, 'export'])->name('sarana.export');
+        Route::get('/sarana/template', [AdminSaranaController::class, 'downloadTemplate'])->name('sarana.template');
+        Route::get('/sarana/import', [AdminSaranaController::class, 'import'])->name('sarana.import');
 
         Route::get('/pengajuan', [AdminPengajuanController::class, 'index'])->name('pengajuan.index');
         Route::get('/pengajuan/{peminjaman}', [AdminPengajuanController::class, 'show'])->name('pengajuan.show');
@@ -72,7 +84,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
 /*
 |--------------------------------------------------------------------------
-| Peminjam
+| user
 |--------------------------------------------------------------------------
 */
     Route::middleware(['auth', 'role:peminjam'])
