@@ -5,7 +5,11 @@
 @php
     $ph = 'bg-gradient-to-br from-brand-mint to-brand-soft/30 text-transparent ring-1 ring-black/5';
     $dipilih = old('sarana_id', request('sarana'));
-    $hariIni = now()->toDateString();
+    // Peminjaman hanya untuk hari ini, dan waktu selesai maksimal pukul 15.00 (WIB)
+    $sekarang = now('Asia/Jakarta');
+    $hariIni = $sekarang->toDateString();
+    $batasJam = '15:00';
+    $sudahTutup = $sekarang->format('H:i') >= $batasJam;
 
     // Jika controller sudah mengirim $saranas, itu yang dipakai. Jika tidak, ambil langsung (hanya baca).
     $saranas = $saranas ?? \App\Models\Sarana::orderBy('nama_sarana')->get();
@@ -31,6 +35,12 @@
                 <span>{{ session('success') }}</span>
             </div>
         @endif
+        @if ($sudahTutup)
+            <div class="mt-6 flex items-start gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <i data-lucide="clock" class="mt-0.5 h-4 w-4 shrink-0"></i>
+                <span>Peminjaman hari ini sudah ditutup (batas pukul 15.00). Silakan ajukan kembali pada jam operasional berikutnya.</span>
+            </div>
+        @endif
         @if ($errors->any())
             <div class="mt-6 flex items-start gap-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
                 <i data-lucide="alert-circle" class="mt-0.5 h-4 w-4 shrink-0"></i>
@@ -54,7 +64,7 @@
                         @forelse ($saranas as $s)
                             @php
                                 $ada = $s->status === 'tersedia' && $s->jumlah_tersedia > 0;
-                                $foto = $s->gambar ? asset('storage/' . $s->gambar) : null;
+                                $foto = \App\Support\SaranaFoto::url($s);
                             @endphp
                             <label class="relative block {{ $ada ? 'cursor-pointer' : 'cursor-not-allowed' }}">
                                 <input type="radio" name="sarana_id" value="{{ $s->id }}"
@@ -115,21 +125,23 @@
 
                         <div>
                             <label for="tanggal_peminjaman" class="text-sm font-semibold">Tanggal Peminjaman</label>
-                            <input type="date" id="tanggal_peminjaman" name="tanggal_peminjaman" min="{{ $hariIni }}"
-                                   value="{{ old('tanggal_peminjaman') }}" required
-                                   class="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-mint">
+                            <input type="date" id="tanggal_peminjaman" name="tanggal_peminjaman"
+                                   min="{{ $hariIni }}" max="{{ $hariIni }}" value="{{ $hariIni }}" readonly required
+                                   class="mt-1.5 w-full cursor-not-allowed rounded-lg border border-gray-200 bg-slate-50 px-3.5 py-2.5 text-sm text-gray-600 outline-none">
+                            <p class="mt-1.5 text-xs text-gray-400">Hanya untuk hari ini.</p>
                             @error('tanggal_peminjaman') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label for="waktu_mulai" class="text-sm font-semibold">Waktu Mulai</label>
-                            <input type="time" id="waktu_mulai" name="waktu_mulai" value="{{ old('waktu_mulai') }}" required
+                            <input type="time" id="waktu_mulai" name="waktu_mulai" max="14:59" value="{{ old('waktu_mulai') }}" required
                                    class="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-mint">
                             @error('waktu_mulai') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label for="waktu_selesai" class="text-sm font-semibold">Waktu Selesai</label>
-                            <input type="time" id="waktu_selesai" name="waktu_selesai" value="{{ old('waktu_selesai') }}" required
+                            <input type="time" id="waktu_selesai" name="waktu_selesai" max="{{ $batasJam }}" value="{{ old('waktu_selesai') }}" required
                                    class="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-mint">
+                            <p class="mt-1.5 text-xs text-gray-400">Maksimal pukul 15.00.</p>
                             @error('waktu_selesai') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
 
@@ -170,8 +182,8 @@
                     Pengajuan akan diperiksa oleh admin. Status dan hasilnya dapat dilihat di notifikasi dan menu Riwayat Pengajuan.
                 </p>
 
-                <button type="submit"
-                        class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gray-100 px-6 py-3 text-sm font-medium text-brand transition hover:bg-white">
+                <button type="submit" {{ $sudahTutup ? 'disabled' : '' }}
+                        class="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gray-100 px-6 py-3 text-sm font-medium text-brand transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-gray-100">
                     <i data-lucide="send" class="h-4 w-4"></i> Kirim Pengajuan
                 </button>
             </aside>
@@ -192,6 +204,10 @@
 
     function perbarui() {
         const r = document.querySelector('input[name="sarana_id"]:checked');
+
+        // Waktu selesai: tidak sebelum waktu mulai, maksimal 15:00
+        if (mulai.value) selesai.min = mulai.value;
+        if (selesai.value && selesai.value > '15:00') selesai.value = '15:00';
 
         if (r) {
             const max = parseInt(r.dataset.max, 10) || 1;

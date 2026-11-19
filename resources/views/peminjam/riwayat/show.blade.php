@@ -38,8 +38,7 @@
     $kode   = data_get($sar, 'kode_inventaris') ?? data_get($sar, 'kode_sarana') ?? data_get($sar, 'kode') ?? '-';
     $kat    = data_get($sar, 'kategori.nama_kategori') ?? data_get($sar, 'jurusan.nama_jurusan') ?? '-';
     $lokasi = data_get($p, 'lokasi_pengambilan') ?? data_get($sar, 'lokasi') ?? '-';
-    $foto   = data_get($sar, 'foto') ?? data_get($sar, 'gambar');
-    if ($foto && ! preg_match('#^(https?:)?//|^/#', $foto)) $foto = asset('storage/'.$foto);
+    $foto   = \App\Support\SaranaFoto::url($sar);
     $mulai  = data_get($p, 'waktu_mulai') ?? data_get($p, 'jam_mulai');
     $selesai = data_get($p, 'waktu_selesai') ?? data_get($p, 'jam_selesai');
     $catatan = data_get($p, 'catatan') ?? data_get($p, 'alasan_penolakan');
@@ -49,6 +48,7 @@
     $aktif = ['diproses' => 0, 'disetujui' => 1, 'dipinjam' => 2, 'terlambat' => 2, 'dikembalikan' => 3][$s] ?? 0;
     $gagal = in_array($s, ['ditolak', 'dibatalkan']);
     $bisaBatal = $s === 'diproses' && \Illuminate\Support\Facades\Route::has('peminjam.pengajuan.cancel');
+    $bisaHapus = in_array($s, ['ditolak', 'dibatalkan', 'dikembalikan']) && \Illuminate\Support\Facades\Route::has('peminjam.riwayat.destroy');
 @endphp
 
 <section class="bg-gradient-to-b from-slate-50 to-white px-6 pb-20 pt-10 lg:px-12">
@@ -136,6 +136,14 @@
                         <form method="POST" action="{{ route('peminjam.pengajuan.cancel', data_get($p, 'id')) }}" onsubmit="return confirm('Batalkan pengajuan ini?')">
                             @csrf @method('PATCH')
                             <button class="rounded-xl border border-red-200 px-5 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50">Batalkan Pengajuan</button>
+                        </form>
+                    @endif
+                    @if ($bisaHapus)
+                        <form method="POST" action="{{ route('peminjam.riwayat.destroy', data_get($p, 'id')) }}" onsubmit="return confirm('Hapus pengajuan ini dari riwayat?')">
+                            @csrf @method('DELETE')
+                            <button class="inline-flex items-center gap-2 rounded-xl border border-red-200 px-5 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                                <i data-lucide="trash-2" class="h-4 w-4"></i> Hapus dari Riwayat
+                            </button>
                         </form>
                     @endif
                     @if (in_array($s, ['ditolak', 'dibatalkan', 'dikembalikan']))

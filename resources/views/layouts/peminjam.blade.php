@@ -28,7 +28,7 @@
 </div>
         <div>
             <p class="font-head text-lg font-bold leading-tight">SkanSarpras</p>
-            <p class="text-[11px] leading-snug text-white/60">Manajemen Sarana Prasarana<br>SMK Negeri 1 Purwosari</p>
+            <p class="text-[11px] leading-snug text-white/60">Peminjaman Sarana Prasarana<br>SMK Negeri 1 Purwosari</p>
         </div>
     </div>
 
