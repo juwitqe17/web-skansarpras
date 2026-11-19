@@ -41,6 +41,16 @@
             <span>Dashboard</span>
         </a>
 
+        {{-- User Manajement --}}
+        <a
+            href="{{ route('admin.user.index') }}"
+            class="flex items-center gap-3 rounded-md px-4 py-3 transition
+            {{ request()->routeIs('admin.user.index') ? $activeClass : $inactiveClass }}"
+        >
+            <x-heroicon-s-user-group class="h-5 w-5 shrink-0" />
+            <span>Pengguna</span>
+        </a>
+
         {{-- Data Departemen --}}
         <a
             href="{{ route('admin.jurusan.index') }}"

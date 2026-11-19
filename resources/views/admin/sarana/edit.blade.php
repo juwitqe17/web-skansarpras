@@ -8,8 +8,8 @@
         <p class="text-sm text-gray-500">
            Edit data peralatan dan perangkat kejuruan yang terdaftar
         </p>
-        <a href="{{ route('admin.sarana.index', ['jurusan_id' => $sarana->jurusan_id]) }}"
-           class="inline-flex items-center gap-1 mt-3 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition">
+        <a href="{{ route('admin.sarana.index', ['jurusan_id' => $selectedJurusan->id]) }}"
+           class="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             Kembali
         </a>

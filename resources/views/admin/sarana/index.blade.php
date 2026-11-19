@@ -10,6 +10,23 @@
         </p>
     </div>
 
+    <!-- Alert Notification -->
+    @if(session('success'))
+        <div class="p-4 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if(session('error'))
+        <div class="p-4 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl">
+            {{ session('error') }}
+        </div>
+    @endif
+    @if($errors->has('file_excel'))
+        <div class="p-4 text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl">
+            {{ $errors->first('file_excel') }}
+        </div>
+    @endif
+
     <!-- Filter Departemen / Jurusan Card -->
     <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -102,7 +119,7 @@
     </div>
 
     @if($selectedJurusan)
-        <!-- Control Bar (Search, Filter, Export, Add) -->
+        <!-- Control Bar (Search, Filter, Excel Dropdown, Add) -->
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-wrap items-center justify-between gap-3">
             <form method="GET" action="{{ route('admin.sarana.index') }}" class="flex flex-wrap items-center gap-3 flex-1">
                 <input type="hidden" name="jurusan_id" value="{{ request('jurusan_id') }}">
@@ -132,11 +149,35 @@
             </form>
 
             <div class="flex items-center gap-3">
-                <a href="{{ route('admin.sarana.export', ['jurusan_id' => request('jurusan_id')]) }}" class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-xl transition">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                    Ekspor Excel
-                </a>
+                <!-- Dropdown Button Excel (Ekspor / Impor) -->
+                <div class="relative" id="excelDropdownWrapper">
+                    <button type="button" onclick="toggleExcelDropdown()" 
+                            class="inline-flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium px-4 py-2 rounded-xl border border-gray-200 transition">
+                        <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Excel
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                        </svg>
+                    </button>
 
+                    <!-- Menu Dropdown -->
+                    <div id="excelDropdownMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-30">
+                        <a href="{{ route('admin.sarana.export', ['jurusan_id' => request('jurusan_id')]) }}" 
+                           class="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition">
+                            <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Ekspor Data
+                        </a>
+                        <button type="button" onclick="openImportModal()" 
+                                class="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition text-left">
+                            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                            Impor Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tombol Tambah Sarana -->
                 <a href="{{ route('admin.sarana.create', ['jurusan_id' => request('jurusan_id')]) }}" class="inline-flex items-center gap-2 bg-[#0f2e24] hover:bg-[#163f32] text-white text-sm font-medium px-4 py-2 rounded-xl transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Tambah Sarana {{ $selectedJurusan->kode_jurusan }}
@@ -178,7 +219,7 @@
                                 <td class="px-6 py-4 font-semibold text-gray-900">{{ $item->jumlah_tersedia }} Unit</td>
                                 <td class="px-6 py-4">
                                     <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $item->kondisi == 'baik' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' }}">
-                                        {{ ucfirst($item->kondisi) }}
+                                        {{ ucfirst(str_replace('_', ' ', $item->kondisi)) }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
@@ -186,37 +227,23 @@
                                         <a href="{{ route('admin.sarana.edit', $item->id) }}" class="p-1.5 text-gray-500 hover:text-emerald-800 rounded-lg hover:bg-gray-100">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                         </a>
-                                        <form action="{{ route('admin.sarana.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus sarana ini?')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button
-                                                type="button"
-                                                onclick="openDeleteModal(
-                                                    {{ $item->id }},
-                                                    @js($item->nama_sarana),
-                                                    @js($item->kode_sarana),
-                                                    @js($item->jumlah),
-                                                    @js($item->jumlah_tersedia),
-                                                    @js($item->kondisi),
-                                                    @js($item->gambar ? asset('storage/' . $item->gambar) : null)
-                                                )"
-                                                class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
-                                            >
-                                            <svg
-                                                class="h-5 w-5"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    stroke-linecap="round"
-                                                    stroke-linejoin="round"
-                                                    stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                />
+                                        <button
+                                            type="button"
+                                            onclick="openDeleteModal(
+                                                {{ $item->id }},
+                                                @js($item->nama_sarana),
+                                                @js($item->kode_sarana),
+                                                @js($item->jumlah),
+                                                @js($item->jumlah_tersedia),
+                                                @js($item->kondisi),
+                                                @js($item->gambar ? asset('storage/' . $item->gambar) : null)
+                                            )"
+                                            class="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-red-600"
+                                        >
+                                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                             </svg>
-                                            </button>
-                                        </form>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -242,7 +269,92 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal Pop-up Impor Sarana -->
+        <div id="importModal" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-xs transition-opacity" onclick="closeImportModal()"></div>
+
+            <div class="flex min-h-full items-center justify-center p-4">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all sm:w-full sm:max-w-lg border border-gray-100">
+                    <form action="{{ route('admin.sarana.import') }}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+                        @csrf
+                        <input type="hidden" name="jurusan_id" value="{{ $selectedJurusan->id }}">
+
+                        <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900">Impor Data Sarana & Prasarana</h3>
+                                <p class="text-xs text-gray-500">Jurusan tujuan: <strong class="text-emerald-800">{{ $selectedJurusan->nama_jurusan }}</strong></p>
+                            </div>
+                            <button type="button" onclick="closeImportModal()" class="text-gray-400 hover:text-gray-600">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <!-- Panduan & Download Template -->
+                        <div class="p-4 bg-emerald-50/70 border border-emerald-100 rounded-xl text-xs text-emerald-900 space-y-2">
+                            <p class="font-semibold">Petunjuk Impor:</p>
+                            <ul class="list-disc pl-4 space-y-1 text-emerald-800">
+                                <li>Gunakan file berformat <strong>.CSV</strong> (Save As CSV dari Excel).</li>
+                                <li>Urutan kolom: <code class="bg-white px-1 py-0.5 rounded">kode_sarana, nama_sarana, jumlah, kondisi, status, lokasi, deskripsi</code></li>
+                                <li>Nilai kolom <em>kondisi</em>: <code class="bg-white px-1 py-0.5 rounded">baik</code>, <code class="bg-white px-1 py-0.5 rounded">rusak_ringan</code>, atau <code class="bg-white px-1 py-0.5 rounded">rusak_berat</code>.</li>
+                            </ul>
+                            <div class="pt-1">
+                                <a href="{{ route('admin.sarana.template') }}" class="inline-flex items-center gap-1.5 font-semibold text-emerald-900 underline hover:text-emerald-700">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Unduh Contoh Template CSV
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Input File -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Pilih File CSV</label>
+                            <input type="file" name="file_excel" accept=".csv" required
+                                   class="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-800 hover:file:bg-emerald-100 border border-gray-200 rounded-xl p-1.5">
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex justify-end gap-3 pt-2 border-t border-gray-100">
+                            <button type="button" onclick="closeImportModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition">
+                                Batal
+                            </button>
+                            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-[#0f2e24] hover:bg-[#163f32] rounded-xl transition">
+                                Mulai Impor
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     @endif
 </div>
-@endsection
 
+<script>
+    function toggleExcelDropdown() {
+        document.getElementById('excelDropdownMenu').classList.toggle('hidden');
+    }
+
+    function openImportModal() {
+        document.getElementById('excelDropdownMenu').classList.add('hidden');
+        document.getElementById('importModal').classList.remove('hidden');
+    }
+
+    function closeImportModal() {
+        document.getElementById('importModal').classList.add('hidden');
+    }
+
+    document.addEventListener('click', function(event) {
+        const wrapper = document.getElementById('excelDropdownWrapper');
+        const menu = document.getElementById('excelDropdownMenu');
+        if (wrapper && !wrapper.contains(event.target)) {
+            menu.classList.add('hidden');
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeImportModal();
+        }
+    });
+</script>
+@endsection
