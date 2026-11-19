@@ -22,8 +22,18 @@
     
     <!-- Header Page -->
     <div>
-        <h1 class="text-3xl font-extrabold text-[#0A261D] tracking-tight">Verifikasi Pengembalian</h1>
-        <p class="mt-1 text-xs text-gray-400">Verifikasi pengembalian pinjaman barang di bawah ini. Pastikan kondisi barang baik.</p>
+        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Verifikasi Pengembalian</h1>
+        <p class="mt-1 text-sm text-gray-400">Verifikasi pengembalian pinjaman barang di bawah ini. Pastikan kondisi barang baik.</p>
+    </div>
+
+    <!-- Tombol Kembali -->
+    <div>
+        <a href="{{ route('admin.pengembalian.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 transition shadow-sm">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+            </svg>
+            Kembali
+        </a>
     </div>
 
     <!-- Main Container Card -->

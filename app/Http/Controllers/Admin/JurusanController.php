@@ -68,20 +68,16 @@ class JurusanController extends Controller
     public function store(Request $request)
     {
         // Validasi data
-        $request->validate([
-            'nama_jurusan' => 'required|string|max:255',
-            'kode_jurusan' => 'required|string|max:50|unique:jurusans,kode_jurusan',
-            'deskripsi'    => 'nullable|string',
-            'status'       => 'required|in:aktif,tidak_aktif',
+        $validated = $request->validate([
+            'nama_jurusan'        => 'required|string|max:255',
+            'kode_jurusan'        => 'required|string|max:50|unique:jurusans,kode_jurusan',
+            'kompetensi_keahlian' => 'nullable|string|max:255',
+            'deskripsi'           => 'nullable|string',
+            'status'              => 'required|in:aktif,tidak_aktif',
         ]);
 
         // Simpan ke database
-        Jurusan::create([
-            'nama_jurusan' => $request->nama_jurusan,
-            'kode_jurusan' => $request->kode_jurusan,
-            'deskripsi'    => $request->deskripsi,
-            'status'       => $request->status,
-        ]);
+        Jurusan::create($validated);
 
         // Redirect kembali ke halaman index dengan pesan sukses
         return redirect()->route('admin.jurusan.index')->with('success', 'Data departemen/jurusan berhasil ditambahkan.');

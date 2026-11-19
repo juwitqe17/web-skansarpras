@@ -7,6 +7,20 @@
     openModal: false, 
     loading: false, 
     data: {},
+    approveModalOpen: false,
+    approveUrl: '',
+    approveLabel: '',
+    openApproveModal(url, label = '') {
+        this.openModal = false;
+        this.approveUrl = url;
+        this.approveLabel = label;
+        this.approveModalOpen = true;
+    },
+    closeApproveModal() {
+        this.approveModalOpen = false;
+        this.approveUrl = '';
+        this.approveLabel = '';
+    },
     fetchDetail(id) {
         this.openModal = true;
         this.loading = true;
@@ -26,8 +40,8 @@
 
     <!-- Header Page -->
     <div>
-        <h1 class="text-3xl font-bold text-gray-900">Manajemen Pengajuan</h1>
-        <p class="mt-1 text-sm text-gray-400">Persetujuan dan pemantauan pengajuan sarana & prasarana.</p>
+        <h1 class="text-2xl font-bold text-gray-900">Manajemen Pengajuan</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Persetujuan dan pemantauan pengajuan sarana & prasarana.</p>
     </div>
 
     <!-- Alert Notifikasi -->
@@ -42,6 +56,14 @@
         <div class="p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl flex justify-between items-center">
             <span>{{ session('error') }}</span>
             <button onclick="this.parentElement.remove()" class="text-red-700 font-bold">&times;</button>
+        </div>
+    @endif
+
+    @if ($errors->any())
+        <div class="p-4 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl space-y-1">
+            @foreach ($errors->all() as $error)
+                <div>{{ $error }}</div>
+            @endforeach
         </div>
     @endif
 
@@ -211,9 +233,9 @@
                                         <svg class="w-3 h-3 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Disetujui
                                     </span>
                                 @elseif($item->status == 'selesai')
-    <span class="bg-blue-100 text-blue-800 text-[10px] font-semibold px-2 py-1 rounded-full inline-flex items-center gap-1">
-        <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Selesai
-    </span>
+                                    <span class="bg-blue-100 text-blue-800 text-[10px] font-semibold px-2 py-1 rounded-full inline-flex items-center gap-1">
+                                        <svg class="w-3 h-3 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Selesai
+                                    </span>
                                 @else
                                     <span class="bg-red-100 text-red-700 text-[10px] font-semibold px-2 py-1 rounded-full inline-flex items-center gap-1">
                                         <svg class="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg> Ditolak
@@ -230,18 +252,17 @@
                                     </button>
 
                                     @if($item->status == 'menunggu')
-                                        <!-- Form Setujui (Diperbaiki menggunakan $item->id) -->
-                                        <form action="{{ route('admin.pengajuan.approve', $item->id) }}" method="POST" class="inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            
-                                            <button type="submit" onclick="return confirm('Yakin ingin menyetujui pengajuan ini?')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-medium transition">
-                                                Setujui
-                                            </button>
-                                        </form>
+                                        <!-- Tombol Setujui (Modal Pop-up Kustom) -->
+                                        <button type="button"
+                                                @click="openApproveModal('{{ route('admin.pengajuan.approve', $item->id) }}', '#{{ $item->id }} - {{ addslashes($item->user->name ?? 'Peminjam') }}')"
+                                                class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[10px] font-medium transition">
+                                            Setujui
+                                        </button>
 
                                         <!-- Tombol Tolak -->
-                                        <button onclick="openRejectModal('{{ route('admin.pengajuan.reject', $item->id) }}')" class="border border-red-400 text-red-500 text-[10px] font-medium px-2.5 py-1 rounded hover:bg-red-50 transition-colors">
+                                        <button type="button"
+                                                onclick="openRejectModal('{{ route('admin.pengajuan.reject', $item->id) }}')"
+                                                class="border border-red-400 text-red-500 text-[10px] font-medium px-2.5 py-1 rounded hover:bg-red-50 transition-colors">
                                             Tolak
                                         </button>
                                     @endif
@@ -268,18 +289,58 @@
         </div>
     </div>
 
-    <!-- Modal Pop-up Alasan Penolakan -->
-    <div id="rejectModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-5 space-y-4 shadow-xl">
-            <h3 class="font-bold text-gray-900 text-sm">Alasan Penolakan Pengajuan</h3>
-            <form id="rejectForm" method="POST" class="space-y-3">
+    <!-- ================= MODAL KONFIRMASI SETUJUI (NO. 5) ================= -->
+    <div x-show="approveModalOpen"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4"
+         style="display: none;">
+        <div @click.away="closeApproveModal()"
+             class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <div class="space-y-1">
+                <h3 class="font-bold text-gray-900 text-base">Konfirmasi Persetujuan Pengajuan</h3>
+                <p class="text-xs text-gray-500">
+                    Yakin ingin menyetujui pengajuan <span class="font-semibold text-gray-800" x-text="approveLabel"></span>? Data akan diteruskan ke bagian pengembalian.
+                </p>
+            </div>
+
+            <form :action="approveUrl" method="POST" class="flex justify-end gap-2 pt-2">
                 @csrf
+                @method('PATCH')
+                <button type="button"
+                        @click="closeApproveModal()"
+                        class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-700 hover:bg-gray-50 transition">
+                    Batal
+                </button>
+                <button type="submit"
+                        class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition">
+                    Ya, Setujui
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL POP-UP ALASAN PENOLAKAN (NO. 1, 2, 3, 4) ================= -->
+    <div id="rejectModal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-[60] p-4">
+        <div onclick="event.stopPropagation()" class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-slate-200">
+            <div class="space-y-1">
+                <h3 class="font-bold text-gray-900 text-base">Alasan Penolakan Pengajuan</h3>
+                <p class="text-xs text-gray-500">Tuliskan alasan penolakan agar pemohon mengetahui status pengajuannya.</p>
+            </div>
+
+            <form id="rejectForm" method="POST" class="space-y-4">
+                @csrf
+                @method('PATCH')
                 <div>
-                    <textarea name="alasan" rows="3" required placeholder="Tuliskan alasan penolakan..." class="w-full text-xs p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-red-500"></textarea>
+                    <textarea id="rejectReasonInput" name="alasan" rows="3" required maxlength="500" placeholder="Tuliskan alasan penolakan..." class="w-full text-xs p-3 border border-gray-300 rounded-xl focus:outline-none focus:border-red-500"></textarea>
                 </div>
                 <div class="flex justify-end space-x-2">
-                    <button type="button" onclick="closeRejectModal()" class="px-3 py-1.5 border border-gray-300 text-xs rounded-lg text-gray-600 hover:bg-gray-50">Batal</button>
-                    <button type="submit" class="px-3 py-1.5 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700">Kirim Penolakan</button>
+                    <button type="button" onclick="closeRejectModal()" class="px-4 py-2 border border-gray-300 text-xs font-semibold rounded-xl text-gray-600 hover:bg-gray-50 transition">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white text-xs font-semibold rounded-xl hover:bg-red-700 transition">Kirim Penolakan</button>
                 </div>
             </form>
         </div>
@@ -293,7 +354,7 @@
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto"
+         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto"
          style="display: none;">
 
         <div @click.away="openModal = false" 
@@ -424,21 +485,17 @@
                     </button>
 
                     <div x-show="data.status === 'menunggu'" class="flex items-center gap-2.5">
-                        <form :action="data.reject_url" method="POST">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" onclick="return confirm('Yakin ingin menolak pengajuan ini?')" class="px-4 py-2.5 bg-[#ff4d4d] hover:bg-red-600 text-white text-xs font-bold rounded-xl transition shadow-xs inline-flex items-center gap-1.5">
-                                Tolak
-                            </button>
-                        </form>
+                        <button type="button"
+                                @click="openModal = false; openRejectModal(data.reject_url)"
+                                class="px-4 py-2.5 bg-[#ff4d4d] hover:bg-red-600 text-white text-xs font-bold rounded-xl transition shadow-xs inline-flex items-center gap-1.5">
+                            Tolak
+                        </button>
 
-                        <form :action="data.approve_url" method="POST">
-                            @csrf
-                            @method('PATCH')
-                            <button type="submit" onclick="return confirm('Yakin ingin menyetujui pengajuan ini?')" class="px-4 py-2.5 bg-[#0f3022] hover:bg-emerald-950 text-white text-xs font-bold rounded-xl transition shadow-xs inline-flex items-center gap-1.5">
-                                Setujui
-                            </button>
-                        </form>
+                        <button type="button"
+                                @click="openApproveModal(data.approve_url, '#' + data.id + ' - ' + data.user_name)"
+                                class="px-4 py-2.5 bg-[#0f3022] hover:bg-emerald-950 text-white text-xs font-bold rounded-xl transition shadow-xs inline-flex items-center gap-1.5">
+                            Setujui
+                        </button>
                     </div>
                 </div>
             </div>
@@ -449,14 +506,31 @@
 
 <script>
     function openRejectModal(actionUrl) {
-        document.getElementById('rejectForm').action = actionUrl;
-        document.getElementById('rejectModal').classList.remove('hidden');
-        document.getElementById('rejectModal').classList.add('flex');
+        const modal = document.getElementById('rejectModal');
+        const form = document.getElementById('rejectForm');
+        const textarea = document.getElementById('rejectReasonInput');
+
+        form.action = actionUrl;
+        if (textarea) {
+            textarea.value = '';
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        setTimeout(() => {
+            if (textarea) textarea.focus();
+        }, 50);
     }
 
     function closeRejectModal() {
-        document.getElementById('rejectModal').classList.add('hidden');
-        document.getElementById('rejectModal').classList.remove('flex');
+        const modal = document.getElementById('rejectModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
     }
+
+    document.getElementById('rejectModal')?.addEventListener('click', function () {
+        closeRejectModal();
+    });
 </script>
 @endsection

@@ -22,7 +22,7 @@
     
     <!-- Header Page -->
     <div>
-        <h1 class="text-3xl font-bold text-[#0A261D]">Manajemen Departemen (Edit Data)</h1>
+        <h1 class="text-3xl font-bold text-gray-900">Manajemen Departemen (Edit Data)</h1>
         <p class="mt-1 text-sm text-gray-400">Ubah informasi departemen atau jurusan di bawah ini.</p>
     </div>
 
