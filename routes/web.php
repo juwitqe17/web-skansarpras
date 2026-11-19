@@ -1,11 +1,12 @@
 <?php
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\JadwalPenggunaanController;
 use App\Http\Controllers\Admin\JurusanController;
 use App\Http\Controllers\Admin\PengajuanController as AdminPengajuanController;
 use App\Http\Controllers\Admin\PengembalianController as AdminPengembalianController;
 use App\Http\Controllers\Admin\SaranaController as AdminSaranaController;
-
-use App\Http\Controllers\Peminjam\SaranaController as PeminjamSaranaController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Peminjam\PengajuanController as PeminjamPengajuanController;
 use App\Http\Controllers\Peminjam\PengembalianController as PeminjamPengembalianController;
 use App\Http\Controllers\Peminjam\RiwayatController;
@@ -38,7 +39,17 @@ Route::post('/logout', [AuthController::class, 'logout'])
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
 
-        Route::get('/dashboard', function () { return view('admin.dashboard'); })->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/user', [UserController::class, 'index'])->name('user.index');
+        Route::get('/user/create', [UserController::class, 'create'])->name('user.create');
+        Route::post('/user', [UserController::class, 'store'])->name('user.store');
+        Route::get('/user/{user}/edit', [UserController::class, 'edit'])->name('user.edit');
+        Route::put('/user/{user}', [UserController::class, 'update'])->name('user.update');
+        Route::delete('/user/{user}', [UserController::class, 'destroy'])->name('user.destroy');
+        Route::get('/user/export', [UserController::class, 'export'])->name('user.export');
+        Route::get('/user/template', [UserController::class, 'downloadTemplate'])->name('user.template');
+        Route::post('/user/import', [UserController::class, 'import'])->name('user.import');
 
         Route::get('/jurusan', [JurusanController::class, 'index'])->name('jurusan.index');
         Route::get('/jurusan/create', [JurusanController::class, 'create'])->name('jurusan.create');
@@ -54,6 +65,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::put('/sarana/{sarana}', [AdminSaranaController::class, 'update'])->name('sarana.update');
         Route::delete('/sarana/{sarana}', [AdminSaranaController::class, 'destroy'])->name('sarana.destroy');
         Route::get('/sarana/export', [AdminSaranaController::class, 'export'])->name('sarana.export');
+        Route::get('/sarana/template', [AdminSaranaController::class, 'downloadTemplate'])->name('sarana.template');
+        Route::get('/sarana/import', [AdminSaranaController::class, 'import'])->name('sarana.import');
 
         Route::get('/pengajuan', [AdminPengajuanController::class, 'index'])->name('pengajuan.index');
         Route::get('/pengajuan/{peminjaman}', [AdminPengajuanController::class, 'show'])->name('pengajuan.show');
@@ -62,16 +75,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
         Route::get('/pengembalian', [AdminPengembalianController::class, 'index']) ->name('pengembalian.index');
         Route::get('/pengembalian/{pengembalian}', [AdminPengembalianController::class, 'show'])->name('pengembalian.show');
+        Route::get('/pengembalian/{pengembalian}/verify', [AdminPengembalianController::class, 'verify'])->name('pengembalian.verify');
         Route::patch('/pengembalian/{pengembalian}/process', [AdminPengembalianController::class, 'process'])->name('pengembalian.process');
-       
+
         Route::get('/jadwal', [JadwalPenggunaanController::class, 'index'])->name('jadwal.index');
         Route::get('/jadwal/{jadwalPenggunaan}', [JadwalPenggunaanController::class, 'show'])->name('jadwal.show');
+        Route::get('/jadwal/export-pdf', [JadwalPenggunaanController::class, 'exportPdf'])->name('admin.jadwal.export-pdf');
 
     });
 
 /*
 |--------------------------------------------------------------------------
-| Peminjam
+| user
 |--------------------------------------------------------------------------
 */
     Route::middleware(['auth', 'role:peminjam'])

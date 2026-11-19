@@ -208,4 +208,105 @@ class SaranaController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+    /**
+     * Unduh Template CSV untuk Impor Sarana
+     */
+    public function downloadTemplate()
+    {
+        $headers = [
+            "Content-type" => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=template-impor-sarana.csv",
+        ];
+
+        $callback = function () {
+            $file = fopen('php://output', 'w');
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+            
+            // Header kolom wajib
+            fputcsv($file, ['kode_sarana', 'nama_sarana', 'jumlah', 'kondisi', 'status', 'lokasi', 'deskripsi']);
+            // Contoh baris data
+            fputcsv($file, ['RPL-NET-001', 'Laptop Axioo Hype 5', '15', 'baik', 'tersedia', 'Lab Komputer RPL 1', 'Core i5 Gen 12, RAM 16GB, SSD 512GB']);
+            fputcsv($file, ['RPL-PRJ-002', 'Proyektor Epson EB-X500', '3', 'rusak_ringan', 'tersedia', 'Ruang Toolman RPL', 'Kabel VGA agak longgar']);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Proses Impor Data Sarana dari File CSV/Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'jurusan_id' => 'required|exists:jurusans,id',
+            'file_excel' => 'required|file|mimes:csv,txt|max:2048',
+        ], [
+            'file_excel.mimes' => 'Format file harus berupa .csv (Save As CSV dari Excel).'
+        ]);
+
+        $file = $request->file('file_excel');
+        $handle = fopen($file->getRealPath(), 'r');
+
+        // Deteksi delimiter koma (,) atau titik koma (;) dari Excel
+        $firstLine = fgets($handle);
+        $delimiter = str_contains($firstLine, ';') ? ';' : ',';
+        rewind($handle);
+
+        // Lewati baris header
+        fgetcsv($handle, 1000, $delimiter);
+
+        $importedCount = 0;
+        $skippedCount = 0;
+
+        while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
+            if (count($row) < 2 || empty(trim($row[0])) || empty(trim($row[1]))) {
+                continue;
+            }
+
+            $kodeSarana = trim($row[0]);
+            $namaSarana = trim($row[1]);
+            $jumlah     = !empty($row[2]) && is_numeric(trim($row[2])) ? (int) trim($row[2]) : 1;
+            
+            $rawKondisi = !empty($row[3]) ? strtolower(trim($row[3])) : 'baik';
+            $kondisi    = in_array($rawKondisi, ['baik', 'rusak_ringan', 'rusak_berat']) ? $rawKondisi : 'baik';
+
+            $rawStatus  = !empty($row[4]) ? strtolower(trim($row[4])) : 'tersedia';
+            $status     = in_array($rawStatus, ['tersedia', 'tidak_tersedia', 'dipinjam']) ? $rawStatus : 'tersedia';
+
+            $lokasi     = !empty($row[5]) ? trim($row[5]) : '-';
+            $deskripsi  = !empty($row[6]) ? trim($row[6]) : null;
+
+            // Lewati jika kode_sarana sudah terdaftar di database
+            if (Sarana::where('kode_sarana', $kodeSarana)->exists()) {
+                $skippedCount++;
+                continue;
+            }
+
+            Sarana::create([
+                'jurusan_id'      => $request->jurusan_id,
+                'kode_sarana'     => $kodeSarana,
+                'nama_sarana'     => $namaSarana,
+                'jumlah'          => $jumlah,
+                'jumlah_tersedia' => $jumlah,
+                'kondisi'         => $kondisi,
+                'status'          => $status,
+                'lokasi'          => $lokasi,
+                'deskripsi'       => $deskripsi,
+            ]);
+
+            $importedCount++;
+        }
+
+        fclose($handle);
+
+        $message = "Berhasil mengimpor {$importedCount} data sarana.";
+        if ($skippedCount > 0) {
+            $message .= " ({$skippedCount} data dilewati karena kode unit sudah ada).";
+        }
+
+        return redirect()->route('admin.sarana.index', ['jurusan_id' => $request->jurusan_id])
+            ->with('success', $message);
+    }
 }
