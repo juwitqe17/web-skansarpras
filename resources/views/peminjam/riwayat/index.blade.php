@@ -21,7 +21,9 @@
     $tgl = fn ($v) => $v ? \Carbon\Carbon::parse($v)->locale('id')->translatedFormat('d F Y') : null;
     $jurusan = data_get(auth()->user(), 'jurusan.nama_jurusan') ?? '-';
 
-    $items = ($riwayats ?? $riwayat ?? $peminjamans ?? $pengajuans ?? $pengajuan ?? $daftarRiwayat ?? $data ?? collect())->map(function ($r) use ($st, $statusMap, $tgl, $jurusan) {
+    $items = ($riwayats ?? $riwayat ?? $peminjamans ?? $pengajuans ?? $pengajuan ?? $daftarRiwayat ?? $data ?? collect())
+        ->reject(fn ($r) => data_get($r, 'dihapus_peminjam_at'))
+        ->map(function ($r) use ($st, $statusMap, $tgl, $jurusan) {
         $s = strtolower((string) data_get($r, 'status', 'diproses'));
         $s = $statusMap[$s] ?? $s;
 
@@ -34,8 +36,7 @@
             ? $details->sum(fn ($d) => (int) data_get($d, 'jumlah', 1))
             : data_get($r, 'jumlah', 1);
 
-        $f = data_get($sar, 'foto') ?? data_get($sar, 'gambar');
-        if ($f && ! preg_match('#^(https?:)?//|^/#', $f)) $f = asset('storage/'.$f);
+        $f = \App\Support\SaranaFoto::url($sar);
         $mulai = data_get($r, 'waktu_mulai') ?? data_get($r, 'jam_mulai');
         $selesai = data_get($r, 'waktu_selesai') ?? data_get($r, 'jam_selesai');
 
@@ -57,6 +58,8 @@
             'warna' => $st[$s][2] ?? $st['diproses'][2],
             'detail' => url('/peminjam/riwayat/'.data_get($r, 'id')),
             'batal' => $s === 'diproses' && \Illuminate\Support\Facades\Route::has('peminjam.pengajuan.cancel') ? route('peminjam.pengajuan.cancel', data_get($r, 'id')) : null,
+            'hapus' => in_array($s, ['ditolak', 'dibatalkan', 'dikembalikan']) && \Illuminate\Support\Facades\Route::has('peminjam.riwayat.destroy')
+                ? route('peminjam.riwayat.destroy', data_get($r, 'id')) : null,
         ];
     })->values();
 
@@ -71,6 +74,8 @@
             'detail' => null, 'label' => $st[$r[3]][0], 'badge' => $st[$r[3]][1], 'warna' => $st[$r[3]][2], 'batal' => null,
         ]);
     }
+
+    $bisaDihapus = $items->filter(fn ($i) => $i['hapus'] ?? null)->count();
 @endphp
 
 <section class="bg-gradient-to-b from-slate-50 to-white px-6 pb-20 pt-10 lg:px-12">
@@ -84,11 +89,36 @@
                 <h1 class="font-head text-3xl font-bold tracking-tight lg:text-4xl">Riwayat Pengajuan Saya</h1>
                 <p class="mt-2 text-[15px] text-gray-500">Pantau status peminjaman dan cek riwayat peminjaman sebelumnya.</p>
             </div>
-            <a href="{{ route('peminjam.pengajuan.create') }}"
-               class="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-brand/25 transition hover:-translate-y-0.5 hover:bg-brand-soft">
-                <i data-lucide="plus" class="h-4 w-4"></i> Tambah Pengajuan
-            </a>
+            <div class="flex flex-wrap items-center gap-3">
+                @if ($bisaDihapus > 0 && Route::has('peminjam.riwayat.bersihkan'))
+                    <form method="POST" action="{{ route('peminjam.riwayat.bersihkan') }}"
+                          onsubmit="return confirm('Hapus {{ $bisaDihapus }} riwayat yang sudah selesai, ditolak, atau dibatalkan?')">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit"
+                                class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-5 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                            <i data-lucide="trash-2" class="h-4 w-4"></i> Bersihkan Riwayat ({{ $bisaDihapus }})
+                        </button>
+                    </form>
+                @endif
+                <a href="{{ route('peminjam.pengajuan.create') }}"
+                   class="inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-brand/25 transition hover:-translate-y-0.5 hover:bg-brand-soft">
+                    <i data-lucide="plus" class="h-4 w-4"></i> Tambah Pengajuan
+                </a>
+            </div>
         </div>
+
+        {{-- Pesan setelah mengajukan / membatalkan --}}
+        @if (session('success'))
+            <div class="mt-6 flex items-start gap-3 rounded-xl bg-brand-mint px-4 py-3 text-sm">
+                <i data-lucide="check-circle-2" class="mt-0.5 h-4 w-4 shrink-0"></i><span>{{ session('success') }}</span>
+            </div>
+        @endif
+        @if (session('error'))
+            <div class="mt-6 flex items-start gap-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                <i data-lucide="alert-circle" class="mt-0.5 h-4 w-4 shrink-0"></i><span>{{ session('error') }}</span>
+            </div>
+        @endif
 
         <div class="mt-9 grid items-start gap-8 lg:grid-cols-[1fr_370px]">
             {{-- DAFTAR --}}
@@ -141,6 +171,13 @@
                     @csrf @method('PATCH')
                     <button class="w-full rounded-xl bg-red-600 py-3 text-sm font-medium text-white shadow-md shadow-red-600/25 transition hover:bg-red-700">Batalkan Pengajuan</button>
                 </form>
+
+                <form id="d-hapus" method="POST" class="mt-4 hidden" onsubmit="return confirm('Hapus pengajuan ini dari riwayat?')">
+                    @csrf @method('DELETE')
+                    <button class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                        <i data-lucide="trash-2" class="h-4 w-4"></i> Hapus dari Riwayat
+                    </button>
+                </form>
             </aside>
         </div>
     </div>
@@ -164,6 +201,7 @@
         $('d-waktu').textContent = r.waktu || '-';
         const dl = $('d-detail'); dl.classList.toggle('hidden', !r.detail); dl.classList.toggle('flex', !!r.detail); if (r.detail) dl.href = r.detail;
         const b = $('d-batal'); b.classList.toggle('hidden', !r.batal); if (r.batal) b.action = r.batal;
+        const h = $('d-hapus'); h.classList.toggle('hidden', !r.hapus); if (r.hapus) h.action = r.hapus;
     }
     btns.forEach((b, i) => { b.addEventListener('click', () => pilih(i)); b.addEventListener('keydown', e => { if (e.key === 'Enter') pilih(i); }); });
     if (data.length) pilih(0);

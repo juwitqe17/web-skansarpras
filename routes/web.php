@@ -10,7 +10,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Peminjam\PengajuanController as PeminjamPengajuanController;
 use App\Http\Controllers\Peminjam\PengembalianController as PeminjamPengembalianController;
 use App\Http\Controllers\Peminjam\RiwayatController;
-use App\Http\Controllers\Peminjam\SaranaController as PeminjamSaranaController;
+use App\Http\Controllers\Peminjam\RiwayatHapusController;
+
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -96,6 +98,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         //     ->name('dashboard');
         Route::get('/dashboard', function () { return view('peminjam.dashboard'); })->name('dashboard');
 
+        // PROFIL
+        Route::get('/profil', function () { return view('peminjam.profil'); })->name('profil');
+
+        // NOTIFIKASI (menandai semua notifikasi sudah dibaca)
+        Route::post('/notifikasi/baca', function () {
+            auth()->user()->unreadNotifications->markAsRead();
+            return response()->noContent();
+        })->name('notifikasi.baca');
+
         // SARANA
         Route::get('/sarana', [PeminjamSaranaController::class, 'index'])
             ->name('sarana.index');
@@ -104,7 +115,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
             ->name('sarana.show');
 
         // PENGAJUAN
-        Route::get('/pengajuan', [PeminjamPengajuanController::class, 'index'])
+        // Halaman daftar pengajuan disatukan dengan Riwayat (tampilan yang sama)
+        Route::get('/pengajuan', [RiwayatController::class, 'index'])
             ->name('pengajuan.index');
 
         Route::get('/pengajuan/create', [PeminjamPengajuanController::class, 'create'])
@@ -132,4 +144,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
 
         Route::get('/riwayat/{peminjaman}', [RiwayatController::class, 'show'])
             ->name('riwayat.show');
+
+        // HAPUS RIWAYAT (disembunyikan dari riwayat peminjam, data admin tetap tersimpan)
+        Route::delete('/riwayat', [RiwayatHapusController::class, 'bersihkan'])
+            ->name('riwayat.bersihkan');
+
+        Route::delete('/riwayat/{peminjaman}', [RiwayatHapusController::class, 'destroy'])
+            ->name('riwayat.destroy');
     });

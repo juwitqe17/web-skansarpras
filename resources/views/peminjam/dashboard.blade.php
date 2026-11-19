@@ -5,9 +5,18 @@
 @php
     $ph = 'bg-gradient-to-br from-brand-mint to-brand-soft/30 text-transparent ring-1 ring-black/5';
 
-    // Ubah true/false sesuai status sarana (atau ambil dari database)
-    $macbookTersedia = true;
-    $axiooTersedia = true;
+    // Sarana yang tersedia milik jurusan user yang sedang login (hanya baca data)
+    $jurusanId = auth()->user()->jurusan_id ?? null;
+    $tersedia = \App\Models\Sarana::query()
+        ->when($jurusanId, fn ($q) => $q->where('jurusan_id', $jurusanId))
+        ->where('status', 'tersedia')
+        ->where('jumlah_tersedia', '>', 0)
+        ->orderBy('nama_sarana')
+        ->get();
+
+    // Tampilkan 2 sarana saja; utamakan jenis yang berbeda (laptop, mouse, headphone, dst.) agar tidak monoton
+    $beragam = $tersedia->unique(fn ($s) => \App\Support\SaranaFoto::jenis($s->nama_sarana));
+    $daftarSarana = $beragam->concat($tersedia->diff($beragam))->take(2)->values();
 @endphp
 
 {{-- HERO --}}
@@ -31,14 +40,15 @@
             </a>
         </div>
 
+        {{-- Campuran sarana dari berbagai jurusan: alat masak (APHP), cangkul (ATPH), helm keselamatan (TL) --}}
         <div class="relative mx-auto h-[340px] w-full max-w-lg sm:h-[400px]">
             <div class="absolute inset-x-6 bottom-2 top-10 rounded-[3rem] bg-gradient-to-br from-brand-mint/70 to-transparent blur-2xl"></div>
-            <img src="{{ asset('images/m1.png') }}" alt="Laboratorium komputer" onerror="this.removeAttribute('src')"
-                 class="absolute left-0 top-0 h-[58%] w-[66%] rounded-2xl object-cover shadow-xl shadow-brand/15 {{ $ph }}">
-            <img src="{{ asset('images/hype5.png') }}" alt="Studio multimedia" onerror="this.removeAttribute('src')"
-                 class="absolute right-0 top-[26%] h-[40%] w-[50%] rounded-2xl object-cover shadow-xl shadow-brand/15 {{ $ph }}">
-            <img src="{{ asset('images/m1air.webp') }}" alt="Bengkel praktik" onerror="this.removeAttribute('src')"
-                 class="absolute bottom-0 left-[16%] h-[34%] w-[48%] rounded-2xl object-cover shadow-xl shadow-brand/15 {{ $ph }}">
+            <img src="{{ asset('./images/mixer.png') }}" alt="Peralatan memasak" onerror="this.removeAttribute('src')"
+                 class="absolute left-0 top-0 h-[58%] w-[66%] object-contain drop-shadow-xl">
+            <img src="{{ asset('./images/cangkul.png') }}" alt="Cangkul" onerror="this.removeAttribute('src')"
+                 class="absolute right-0 top-[26%] h-[40%] w-[50%] object-contain drop-shadow-xl">
+            <img src="{{ asset('./images/helm.png') }}" alt="Helm keselamatan" onerror="this.removeAttribute('src')"
+                 class="absolute bottom-0 left-[16%] h-[34%] w-[48%] object-contain drop-shadow-xl">
         </div>
     </div>
 </section>
@@ -56,63 +66,38 @@
     </div>
 
     <div class="mx-auto mt-6 max-w-5xl space-y-16">
-
-        {{-- 1. Laptop MacBook M1 Air (gambar kiri) --}}
-        <article class="grid items-center gap-10 md:grid-cols-2">
-            <div class="relative flex justify-center py-6">
-                <div class="absolute left-2 top-0 h-56 w-64 rounded-bl-[2.5rem] rounded-tr-[4rem] rounded-tl-xl rounded-br-xl bg-gradient-to-br from-brand-soft/70 to-brand"></div>
-                <span class="absolute right-6 top-2 h-3 w-3 rounded-full bg-brand"></span>
-                <div class="relative z-10 rounded-2xl bg-white p-4 shadow-xl shadow-brand/15 ring-1 ring-black/5">
-                    <img src="{{ asset('images/m1airmac.png') }}" alt="Laptop MacBook M1 Air" onerror="this.removeAttribute('src')"
-                         class="h-44 w-64 rounded-lg object-contain {{ $ph }}">
+        @forelse ($daftarSarana as $s)
+            <article class="grid items-center gap-10 md:grid-cols-2">
+                <div class="relative flex justify-center py-6 {{ $loop->even ? 'md:order-2' : '' }}">
+                    <div class="absolute h-56 w-64 bg-gradient-to-br from-brand-soft/70 to-brand
+                        {{ $loop->even ? 'bottom-0 right-2 rounded-br-[2.5rem] rounded-tl-[4rem] rounded-tr-xl rounded-bl-xl' : 'left-2 top-0 rounded-bl-[2.5rem] rounded-tr-[4rem] rounded-tl-xl rounded-br-xl' }}"></div>
+                    <span class="absolute h-3 w-3 rounded-full bg-brand {{ $loop->even ? 'bottom-2 left-6' : 'right-6 top-2' }}"></span>
+                    <div class="relative z-10 rounded-2xl bg-white p-4 shadow-xl shadow-brand/15 ring-1 ring-black/5">
+                        <img src="{{ \App\Support\SaranaFoto::url($s) }}" alt="{{ $s->nama_sarana }}" onerror="this.removeAttribute('src')"
+                             class="h-44 w-64 rounded-lg object-contain {{ $ph }}">
+                    </div>
                 </div>
-            </div>
 
-            <div>
-                <h3 class="font-head text-2xl font-bold tracking-tight">Laptop MacBook M1 Air</h3>
-                <p class="mt-4 text-sm font-semibold">Deskripsi :</p>
-                <p class="mt-1.5 max-w-md text-sm leading-relaxed text-gray-500">
-                    Laptop Apple dengan chip M1 (CPU 8-core, GPU 7-core), RAM 8 GB, dan penyimpanan SSD 256 GB. Layar Retina 13,3 inci beresolusi 2560 × 1600, baterai tahan hingga sekitar 18 jam, dan bobot ringan ±1,29 kg. Berjalan di macOS, cocok untuk desain grafis, editing video, dan pemrograman.
-                </p>
-                <p class="mt-4 flex items-center gap-2 text-sm">
-                    <span class="h-2 w-2 rounded-full {{ $macbookTersedia ? 'bg-green-500' : 'bg-red-400' }}"></span>
-                    {{ $macbookTersedia ? 'Tersedia' : 'Sedang dipinjam' }}
-                </p>
-                <a href="{{ route('peminjam.pengajuan.create', ['sarana' => 1]) }}"
-                   class="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white shadow-md shadow-brand/20 transition hover:bg-brand-soft {{ $macbookTersedia ? '' : 'pointer-events-none opacity-50' }}">
-                    <i data-lucide="log-in" class="h-4 w-4"></i> Pinjam
-                </a>
-            </div>
-        </article>
-
-        {{-- 2. Laptop Axioo Hype 5 (gambar kanan) --}}
-        <article class="grid items-center gap-10 md:grid-cols-2">
-            <div class="relative flex justify-center py-6 md:order-2">
-                <div class="absolute bottom-0 right-2 h-56 w-64 rounded-br-[2.5rem] rounded-tl-[4rem] rounded-tr-xl rounded-bl-xl bg-gradient-to-br from-brand-soft/70 to-brand"></div>
-                <span class="absolute bottom-2 left-6 h-3 w-3 rounded-full bg-brand"></span>
-                <div class="relative z-10 rounded-2xl bg-white p-4 shadow-xl shadow-brand/15 ring-1 ring-black/5">
-                    <img src="{{ asset('images/hype5.png') }}" alt="Laptop Axioo Hype 5" onerror="this.removeAttribute('src')"
-                         class="h-44 w-64 rounded-lg object-contain {{ $ph }} ">
+                <div class="{{ $loop->even ? 'md:order-1' : '' }}">
+                    <h3 class="font-head text-2xl font-bold tracking-tight">{{ $s->nama_sarana }}</h3>
+                    <p class="mt-4 text-sm font-semibold">Deskripsi :</p>
+                    <p class="mt-1.5 max-w-md text-sm leading-relaxed text-gray-500">
+                        {{ $s->deskripsi ? \Illuminate\Support\Str::limit($s->deskripsi, 220) : 'Belum ada deskripsi untuk sarana ini.' }}
+                    </p>
+                    <p class="mt-4 flex items-center gap-2 text-sm">
+                        <span class="h-2 w-2 rounded-full bg-green-500"></span> Tersedia
+                    </p>
+                    <a href="{{ route('peminjam.pengajuan.create', ['sarana' => $s->id]) }}"
+                       class="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white shadow-md shadow-brand/20 transition hover:bg-brand-soft">
+                        <i data-lucide="log-in" class="h-4 w-4"></i> Pinjam
+                    </a>
                 </div>
-            </div>
-
-            <div class="md:order-1">
-                <h3 class="font-head text-2xl font-bold tracking-tight">Laptop Axioo Hype 5</h3>
-                <p class="mt-4 text-sm font-semibold">Deskripsi :</p>
-                <p class="mt-1.5 max-w-md text-sm leading-relaxed text-gray-500">
-                    Laptop Windows dengan prosesor Intel Core i5, RAM 8 GB, dan penyimpanan SSD 512 GB. Layar 14 inci Full HD (1920 × 1080) IPS dengan bodi tipis dan ringan. Andal untuk praktikum ketik, desain, pemrograman, dan kegiatan belajar mengajar sehari-hari.
-                </p>
-                <p class="mt-4 flex items-center gap-2 text-sm">
-                    <span class="h-2 w-2 rounded-full {{ $axiooTersedia ? 'bg-green-500' : 'bg-red-400' }}"></span>
-                    {{ $axiooTersedia ? 'Tersedia' : 'Sedang dipinjam' }}
-                </p>
-                <a href="{{ route('peminjam.pengajuan.create', ['sarana' => 2]) }}"
-                   class="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white shadow-md shadow-brand/20 transition hover:bg-brand-soft {{ $axiooTersedia ? '' : 'pointer-events-none opacity-50' }}">
-                    <i data-lucide="log-in" class="h-4 w-4"></i> Pinjam
-                </a>
-            </div>
-        </article>
-
+            </article>
+        @empty
+            <p class="rounded-2xl bg-slate-50 px-6 py-12 text-center text-sm text-gray-500 ring-1 ring-black/5">
+                Belum ada sarana yang tersedia untuk jurusan Anda saat ini.
+            </p>
+        @endforelse
     </div>
 </section>
 

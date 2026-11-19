@@ -3,7 +3,7 @@
             <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-12 h-12 rounded bg-white/90 p-1">
             <div>
                 <p class="font-head font-bold text-2xl leading-tight">SkanSarpras</p>
-                <p class="text-xs text-white/60 leading-tight">Manajemen Sarana Prasarana<br>SMK Negeri 1 Purwosari</p>
+                <p class="text-xs text-white/60 leading-tight">Peminjaman Sarana Prasarana<br>SMK Negeri 1 Purwosari</p>
             </div>
         </div>
 
