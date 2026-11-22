@@ -13,6 +13,7 @@ use App\Http\Controllers\Peminjam\RiwayatController;
 use App\Http\Controllers\Peminjam\SaranaController as PeminjamSaranaController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', fn () => view('homepage'))->name('homepage');
 
 /*
 |--------------------------------------------------------------------------

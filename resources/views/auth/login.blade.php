@@ -9,13 +9,13 @@
     {{-- Font: Bricolage Grotesque (judul) + Figtree (isi) --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
-        .font-display { font-family: 'Bricolage Grotesque', 'Figtree', ui-sans-serif, system-ui, sans-serif; }
-        .font-body    { font-family: 'Figtree', ui-sans-serif, system-ui, sans-serif; }
+        .font-display { font-family: 'Work Sans', 'Figtree', ui-sans-serif, system-ui, sans-serif; }
+        .font-body    { font-family: 'Work Sans', ui-sans-serif, system-ui, sans-serif; }
 
         /* Satu momen animasi: kartu peminjaman naik satu per satu saat halaman dibuka */
         @keyframes card-rise {
@@ -143,7 +143,15 @@
             <div class="flex items-center bg-white px-8 py-12 sm:px-12 md:px-12 lg:px-12">
 
                 <div class="w-full max-w-[425px] mx-auto">
-
+                    <a
+                        href="{{ url('/') }}"
+                        class="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[#64748b] transition hover:text-[#064e3b] focus:outline-none focus-visible:text-[#064e3b]"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                        </svg>
+                        Kembali ke Beranda
+                    </a>
                     {{-- Heading --}}
                     <div class="mb-9">
 
