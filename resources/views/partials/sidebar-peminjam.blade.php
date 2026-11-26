@@ -1,9 +1,9 @@
-<aside class="hidden lg:flex fixed inset-y-0 left-0 w-[264px] flex-col bg-brand text-white px-4 py-6">
+<aside class="hidden lg:flex fixed inset-y-0 left-0 w-[264] flex-col bg-brand text-white px-4 py-6">
         <div class="flex items-center gap-3 px-2 pb-4 border-b border-white/20">
             <img src="{{ asset('images/logo.png') }}" alt="Logo" class="w-12 h-12 rounded bg-white/90 p-1">
             <div>
                 <p class="font-head font-bold text-2xl leading-tight">SkanSarpras</p>
-                <p class="text-xs text-white/60 leading-tight">Peminjaman Sarana Prasarana<br>SMK Negeri 1 Purwosari</p>
+                <p class="text-[11px]] text-white/60 leading-tight">Peminjaman Sarana Prasarana<br>SMK Negeri 1 Purwosari</p>
             </div>
         </div>
 
