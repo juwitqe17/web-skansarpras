@@ -11,8 +11,7 @@ use App\Http\Controllers\Peminjam\PengajuanController as PeminjamPengajuanContro
 use App\Http\Controllers\Peminjam\PengembalianController as PeminjamPengembalianController;
 use App\Http\Controllers\Peminjam\RiwayatController;
 use App\Http\Controllers\Peminjam\RiwayatHapusController;
-
-use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Peminjam\SaranaController as PeminjamSaranaController;
 use Illuminate\Support\Facades\Route;
 
 

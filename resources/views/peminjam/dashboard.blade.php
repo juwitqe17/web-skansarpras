@@ -17,6 +17,32 @@
     // Tampilkan 2 sarana saja; utamakan jenis yang berbeda (laptop, mouse, headphone, dst.) agar tidak monoton
     $beragam = $tersedia->unique(fn ($s) => \App\Support\SaranaFoto::jenis($s->nama_sarana));
     $daftarSarana = $beragam->concat($tersedia->diff($beragam))->take(2)->values();
+
+    // ---- Hero: gambar bergantian ----
+    // Foto Anda sendiri: taruh semua file (png/webp/jpg/svg) di public/images/hero/ , nama file bebas.
+    // Otomatis dipakai semua. Isi 4 foto atau lebih agar bergantian.
+    // Jika folder itu kosong, dipakai ilustrasi bawaan (10 jurusan).
+    $dirHero = public_path('images/hero');
+    $fotoHero = collect(is_dir($dirHero) ? scandir($dirHero) : [])
+        ->filter(fn ($f) => preg_match('/\.(png|webp|jpe?g|svg)$/i', $f))
+        ->sort()
+        ->values()
+        ->map(fn ($f) => [
+            'src' => asset('images/hero/' . rawurlencode($f)),
+            'alt' => ucwords(str_replace(['-', '_'], ' ', pathinfo($f, PATHINFO_FILENAME))),
+        ]);
+
+    // [keterangan, nama ilustrasi bawaan]
+    $heroBawaan = collect([
+        ['Laptop', 'laptop'], ['Cangkul', 'cangkul'], ['Helm las', 'helm-las'], ['Kamera', 'kamera'],
+        ['Peralatan memasak', 'wajan'], ['Kunci pas', 'kunci'], ['Router jaringan', 'router'],
+        ['Spray gun', 'spray'], ['Lengan robot', 'robot'], ['Jangka sorong', 'jangka-sorong'],
+    ])->map(fn ($r) => ['src' => asset("images/sarana/{$r[1]}.svg"), 'alt' => $r[0]]);
+
+    // Foto sendiri dipakai penuh; jika kurang dari 3, dilengkapi ilustrasi bawaan agar tata letak tetap utuh
+    $heroSlides = $fotoHero->isEmpty()
+        ? $heroBawaan
+        : ($fotoHero->count() >= 3 ? $fotoHero : $fotoHero->concat($heroBawaan)->take(3))->values();
 @endphp
 
 {{-- HERO --}}
@@ -40,15 +66,15 @@
             </a>
         </div>
 
-        {{-- Campuran sarana dari berbagai jurusan: alat masak (APHP), cangkul (ATPH), helm keselamatan (TL) --}}
+        {{-- Campuran sarana dari 10 jurusan; tiga gambar bergantian otomatis (lihat script di bawah) --}}
         <div class="relative mx-auto h-[340px] w-full max-w-lg sm:h-[400px]">
             <div class="absolute inset-x-6 bottom-2 top-10 rounded-[3rem] bg-gradient-to-br from-brand-mint/70 to-transparent blur-2xl"></div>
-            <img src="{{ asset('./images/mixer.png') }}" alt="Peralatan memasak" onerror="this.removeAttribute('src')"
-                 class="absolute left-0 top-0 h-[58%] w-[66%] object-contain drop-shadow-xl">
-            <img src="{{ asset('./images/cangkul.png') }}" alt="Cangkul" onerror="this.removeAttribute('src')"
-                 class="absolute right-0 top-[26%] h-[40%] w-[50%] object-contain drop-shadow-xl">
-            <img src="{{ asset('./images/helm.png') }}" alt="Helm keselamatan" onerror="this.removeAttribute('src')"
-                 class="absolute bottom-0 left-[16%] h-[34%] w-[48%] object-contain drop-shadow-xl">
+            <img id="hero-img-0" src="{{ $heroSlides[0]['src'] }}" alt="{{ $heroSlides[0]['alt'] }}"
+                 class="absolute left-0 top-0 h-[58%] w-[66%] object-contain drop-shadow-xl transition-opacity duration-500 ease-in-out">
+            <img id="hero-img-1" src="{{ $heroSlides[1]['src'] }}" alt="{{ $heroSlides[1]['alt'] }}"
+                 class="absolute right-0 top-[26%] h-[40%] w-[50%] object-contain drop-shadow-xl transition-opacity duration-500 ease-in-out">
+            <img id="hero-img-2" src="{{ $heroSlides[2]['src'] }}" alt="{{ $heroSlides[2]['alt'] }}"
+                 class="absolute bottom-0 left-[16%] h-[34%] w-[48%] object-contain drop-shadow-xl transition-opacity duration-500 ease-in-out">
         </div>
     </div>
 </section>
@@ -133,4 +159,31 @@
         </ol>
     </div>
 </section>
+
+<script>
+(() => {
+    const slides = @json($heroSlides);
+    const slot = [0, 1, 2].map(i => document.getElementById('hero-img-' + i));
+    if (slides.length <= 3 || slot.some(el => !el)) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    slides.forEach(s => { new Image().src = s.src; }); // muat lebih dulu agar tidak berkedip
+
+    const n = slides.length;
+    const JEDA = 4000;     // ganti gambar tiap 4 detik
+    const SELANG = 1300;   // tiap kotak berganti bergiliran, tidak bersamaan
+    const langkah = [0, 0, 0];
+
+    function ganti(i) {
+        if (document.hidden) return;
+        langkah[i]++;
+        const s = slides[(i + 3 * langkah[i]) % n]; // tiga kotak selalu menampilkan gambar berbeda
+        const el = slot[i];
+        el.style.opacity = 0;
+        setTimeout(() => { el.src = s.src; el.alt = s.alt; el.style.opacity = 1; }, 500);
+    }
+
+    [0, 1, 2].forEach(i => setTimeout(() => setInterval(() => ganti(i), JEDA), i * SELANG));
+})();
+</script>
 @endsection

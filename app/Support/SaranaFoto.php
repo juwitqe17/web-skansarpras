@@ -21,8 +21,14 @@ class SaranaFoto
         'kamera'    => '/kamera|camera|dslr/',
         'wajan'     => '/wajan|panci|kompor|penggorengan|alat masak|spatula/',
         'cangkul'   => '/cangkul|pacul|sekop|arit|garpu tanah/',
+        'helm-las'  => '/helm las|topi las|mesin las|las listrik|welding/',
         'helm'      => '/helm|topi keselamatan|safety/',
         'katelpak'  => '/katelpak|katelpack|wearpack|wear pack|coverall|overall|baju kerja/',
+        'robot'     => '/robot|\bplc\b|arduino|mekatronika/',
+        'router'    => '/router|switch|modem|access point|kabel lan|crimping|\butp\b|mikrotik/',
+        'jangka-sorong' => '/jangka sorong|mikrometer|caliper|bubut|frais/',
+        'kunci'     => '/kunci|obeng|\btang\b|toolbox|toolkit/',
+        'spray'     => '/spray|kompresor|\bcat\b|dempul|amplas/',
     ];
 
     public static function url($sarana): string
@@ -45,8 +51,16 @@ class SaranaFoto
         }
 
         $nama = data_get($sarana, 'nama_sarana') ?? data_get($sarana, 'nama');
+        $jenis = self::jenis($nama);
 
-        return asset('images/sarana/' . self::jenis($nama) . '.svg');
+        // Foto sendiri per jenis (mis. public/images/sarana/laptop.png) menggantikan ilustrasi bawaan
+        foreach (['png', 'webp', 'jpg', 'jpeg'] as $ext) {
+            if (file_exists(public_path("images/sarana/{$jenis}.{$ext}"))) {
+                return asset("images/sarana/{$jenis}.{$ext}");
+            }
+        }
+
+        return asset("images/sarana/{$jenis}.svg");
     }
 
     public static function jenis(?string $nama): string
