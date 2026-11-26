@@ -11,27 +11,21 @@
 
     // ==== JAM PELAJARAN (sesuai jadwal sekolah): ubah daftar ini jika jadwal berubah ====
     // [nama, mulai, selesai, apakah istirahat]. Baris istirahat hanya ditampilkan, tidak bisa dipilih sendiri.
-   
-$jamPelajaran = [
-    ['Jam ke-1',  '06:45', '07:25', false],
-    ['Jam ke-2',  '07:25', '08:05', false],
-    ['Jam ke-3',  '08:05', '08:45', false],
-    ['Jam ke-4',  '08:45', '09:25', false],
-
-    ['Istirahat', '09:25', '09:40', true],
-
-    ['Jam ke-5',  '09:40', '10:20', false],
-    ['Jam ke-6',  '10:20', '11:00', false],
-    ['Jam ke-7',  '11:00', '11:40', false],
-
-    ['Istirahat', '11:40', '12:40', true],
-
-    ['Jam ke-8',  '12:40', '13:20', false],
-    ['Jam ke-9',  '13:20', '14:00', false],
-    ['Jam ke-10', '14:00', '14:40', false],
-    ['Jam ke-11', '14:40', '15:00', false],
-];
-
+    $jamPelajaran = [
+        ['Jam ke-1',  '06:45', '07:25', false],
+        ['Jam ke-2',  '07:25', '08:05', false],
+        ['Jam ke-3',  '08:05', '08:45', false],
+        ['Jam ke-4',  '08:45', '09:25', false],
+        ['Istirahat', '09:25', '09:40', true],
+        ['Jam ke-5',  '09:40', '10:20', false],
+        ['Jam ke-6',  '10:20', '11:00', false],
+        ['Jam ke-7',  '11:00', '11:40', false],
+        ['Jam ke-8',  '11:40', '12:20', false],
+        ['Istirahat', '12:20', '12:50', true],
+        ['Jam ke-9',  '12:50', '13:30', false],
+        ['Jam ke-10', '13:30', '14:10', false],
+        ['Jam ke-11', '14:10', '14:50', false],
+    ];
 
     $jam = collect($jamPelajaran)->map(fn ($j) => [
         'nama' => $j[0], 'mulai' => $j[1], 'selesai' => $j[2], 'istirahat' => $j[3],
@@ -84,7 +78,9 @@ $jamPelajaran = [
             </div>
         @endif
 
-        <form method="POST" action="{{ $aksi }}" class="mt-8 grid items-start gap-8 lg:grid-cols-3">
+        <form method="POST" action="{{ $aksi }}" class="mt-8 grid items-start gap-8 lg:grid-cols-3"
+              data-konfirmasi data-konfirmasi-gaya="tanya" data-konfirmasi-judul="Kirim pengajuan?"
+              data-konfirmasi-tombol="Ya" data-konfirmasi-batal="Tidak">
             @csrf
 
             <div class="space-y-8 lg:col-span-2">
@@ -332,7 +328,14 @@ $jamPelajaran = [
             e.preventDefault();
             $('jam-error').classList.remove('hidden');
             $('jam-grid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
         }
+
+        // Isi pesan dialog konfirmasi dengan ringkasan pengajuan
+        const r = document.querySelector('input[name="sarana_id"]:checked');
+        mulai.form.dataset.konfirmasiPesan =
+            (r ? r.dataset.nama : 'Sarana') + ' · ' + (jumlah.value || 1) + ' unit · ' + $('ringkas-jadwal').textContent +
+            '. Pengajuan akan dikirim ke admin untuk diperiksa.';
     });
 })();
 </script>

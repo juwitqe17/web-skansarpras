@@ -153,13 +153,13 @@
 
                 <div class="mt-7 flex flex-wrap justify-end gap-3">
                     @if ($bisaBatal)
-                        <form method="POST" action="{{ route('peminjam.pengajuan.cancel', data_get($p, 'id')) }}" onsubmit="return confirm('Batalkan pengajuan ini?')">
+                        <form method="POST" action="{{ route('peminjam.pengajuan.cancel', data_get($p, 'id')) }}" data-konfirmasi data-konfirmasi-gaya="peringatan" data-konfirmasi-judul="Batalkan pengajuan?" data-konfirmasi-pesan="Pengajuan ini akan dibatalkan dan tidak bisa dikembalikan." data-konfirmasi-tombol="Ya, Batalkan">
                             @csrf @method('PATCH')
                             <button class="rounded-xl border border-red-200 px-5 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50">Batalkan Pengajuan</button>
                         </form>
                     @endif
                     @if ($bisaHapus)
-                        <form method="POST" action="{{ route('peminjam.riwayat.destroy', data_get($p, 'id')) }}" onsubmit="return confirm('Hapus pengajuan ini dari riwayat?')">
+                        <form method="POST" action="{{ route('peminjam.riwayat.destroy', data_get($p, 'id')) }}" data-konfirmasi data-konfirmasi-gaya="bahaya" data-konfirmasi-judul="Hapus dari riwayat?" data-konfirmasi-pesan="Pengajuan ini akan dihapus dari riwayat Anda." data-konfirmasi-tombol="Ya, Hapus">
                             @csrf @method('DELETE')
                             <button class="inline-flex items-center gap-2 rounded-xl border border-red-200 px-5 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
                                 <i data-lucide="trash-2" class="h-4 w-4"></i> Hapus dari Riwayat

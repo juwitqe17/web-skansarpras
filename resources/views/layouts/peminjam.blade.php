@@ -14,36 +14,46 @@
             fontFamily: { sans: ['Work Sans', 'sans-serif'], head: ['Manrope', 'sans-serif'] }
         } } }
     </script>
+    <style>
+        /* Dialog konfirmasi: menggantikan kotak alert bawaan browser */
+        #dialog-konfirmasi::backdrop { background: rgba(16, 41, 29, .45); backdrop-filter: blur(3px); }
+        #dialog-konfirmasi[open] { animation: konfirmasi-muncul .18s ease-out; }
+        #dialog-konfirmasi[open]::backdrop { animation: konfirmasi-pudar .18s ease-out; }
+        @keyframes konfirmasi-muncul { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+        @keyframes konfirmasi-pudar { from { opacity: 0; } to { opacity: 1; } }
+    </style>
 </head>
 <body class="bg-brand font-sans text-brand antialiased">
 
 {{-- SIDEBAR --}}
-<aside class="hidden lg:flex fixed inset-y-0 left-0 z-30 w-60 flex-col bg-brand px-4 py-6 text-white">
+<aside class="hidden lg:flex fixed inset-y-0 left-0 z-30 w-64 flex-col bg-brand px-4 py-6 text-white">
     <div class="flex items-center gap-3 border-b border-white/15 px-1 pb-5">
-        <div class="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/90 text-brand">
-            <i data-lucide="school" class="h-5 w-5"></i>
-            <img src="{{ asset('images/logosmk.png') }}" alt="Logo SkanSarpras" onerror="this.remove()"
-                 class="absolute inset-0 h-full w-full rounded-lg bg-white object-contain p-1">
+        <div class="relative flex h-12 w-12 shrink-0 items-center justify-center">
+            <img src="{{ asset('images/logosmk.png') }}" alt="Logo SkanSarpras"
+                 onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden')"
+                 class="h-full w-full object-contain drop-shadow-[0_0_10px_rgba(213,235,221,0.25)]">
+            <i data-lucide="school" class="hidden h-6 w-6 text-white"></i>
         </div>
-        <div>
+        <div class="min-w-0">
             <p class="font-head text-lg font-bold leading-tight">SkanSarpras</p>
-            <p class="text-[11px] leading-snug text-white/60">Manajemen Sarana Prasarana<br>SMK Negeri 1 Purwosari</p>
+            <p class="whitespace-nowrap text-[10px] leading-snug tracking-tight text-white/60">Peminjaman Sarana Prasarana<br>SMKN 1 Purwosari</p>
         </div>
     </div>
 
     @php
-      $menu = [
-    ['Beranda', 'peminjam.dashboard', 'layout-dashboard'],
-    ['Sarana Prasarana', 'peminjam.sarana.index', 'archive'],
-    ['Peminjaman', 'peminjam.pengajuan.create', 'clipboard-list'],
-    ['Riwayat Pengajuan', 'peminjam.riwayat.index', 'history'],
-];
+        // [label, route tujuan, ikon, daftar route yang membuat menu ini aktif]
+        $menu = [
+            ['Beranda', 'peminjam.dashboard', 'layout-dashboard', ['peminjam.dashboard']],
+            ['Sarana Prasarana', 'peminjam.sarana.index', 'archive', ['peminjam.sarana.*']],
+            ['Peminjaman', 'peminjam.pengajuan.create', 'clipboard-list', ['peminjam.pengajuan.create']],
+            ['Riwayat Pengajuan', 'peminjam.riwayat.index', 'history', ['peminjam.riwayat.*', 'peminjam.pengajuan.index', 'peminjam.pengajuan.show']],
+        ];
     @endphp
     <nav class="mt-6 space-y-1.5 text-sm">
-        @foreach ($menu as [$label, $route, $icon])
+        @foreach ($menu as [$label, $route, $icon, $aktifDi])
             <a href="{{ Route::has($route) ? route($route) : '#' }}"
                class="flex items-center gap-3 rounded-lg px-3.5 py-2.5 transition-colors
-                      {{ request()->routeIs($route) ? 'bg-brand-soft font-medium' : 'text-white/80 hover:bg-white/10 hover:text-white' }}">
+                      {{ request()->routeIs(...$aktifDi) ? 'bg-brand-soft font-medium' : 'text-white/80 hover:bg-white/10 hover:text-white' }}">
                 <i data-lucide="{{ $icon }}" class="h-4 w-4"></i> {{ $label }}
             </a>
         @endforeach
@@ -57,13 +67,14 @@
     </form>
 </aside>
 
-<div class="min-w-0 lg:ml-60">
+<div class="min-w-0 lg:ml-64">
     {{-- NAVBAR --}}
     @php
         $user = auth()->user();
         $notifikasi = $user ? $user->notifications()->latest()->take(8)->get() : collect();
         $belumDibaca = $user ? $user->unreadNotifications()->count() : 0;
         $urlBaca = Route::has('peminjam.notifikasi.baca') ? route('peminjam.notifikasi.baca') : null;
+        $urlPoll = Route::has('peminjam.notifikasi.index') ? route('peminjam.notifikasi.index') : null;
         $namaJurusan = $user->jurusan->nama_jurusan ?? '-';
     @endphp
     <header class="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-200 bg-white/95 px-6 backdrop-blur lg:px-10">
@@ -91,32 +102,11 @@
                      class="invisible absolute right-0 z-50 mt-4 w-80 max-w-[calc(100vw-2rem)] origin-top-right scale-95 rounded-2xl bg-white opacity-0 shadow-xl shadow-brand/15 ring-1 ring-black/5 transition duration-150">
                     <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
                         <p class="font-head text-sm font-bold">Notifikasi</p>
-                        @if ($belumDibaca > 0)
-                            <span class="rounded-full bg-brand-mint px-2 py-0.5 text-[11px] font-semibold">{{ $belumDibaca }} baru</span>
-                        @endif
+                        <span id="notif-baru" class="{{ $belumDibaca > 0 ? '' : 'hidden' }} rounded-full bg-brand-mint px-2 py-0.5 text-[11px] font-semibold">{{ $belumDibaca }} baru</span>
                     </div>
 
-                    <ul class="max-h-80 divide-y divide-gray-50 overflow-y-auto">
-                        @forelse ($notifikasi as $n)
-                            <li class="flex gap-3 px-4 py-3 {{ $n->read_at ? '' : 'bg-brand-mint/40' }}">
-                                <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-mint text-brand">
-                                    <i data-lucide="bell-ring" class="h-4 w-4"></i>
-                                </span>
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-sm font-semibold leading-snug">{{ $n->data['judul'] ?? 'Notifikasi' }}</p>
-                                    <p class="mt-0.5 text-xs leading-relaxed text-gray-500">{{ $n->data['pesan'] ?? '' }}</p>
-                                    <p class="mt-1 text-[11px] text-gray-400">{{ $n->created_at->diffForHumans() }}</p>
-                                </div>
-                                @unless ($n->read_at)
-                                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-red-500"></span>
-                                @endunless
-                            </li>
-                        @empty
-                            <li class="px-4 py-10 text-center text-sm text-gray-400">
-                                <i data-lucide="bell-off" class="mx-auto mb-2 h-6 w-6"></i>
-                                Belum ada notifikasi
-                            </li>
-                        @endforelse
+                    <ul id="notif-list" class="max-h-80 divide-y divide-gray-50 overflow-y-auto">
+                        @include('peminjam._notifikasi', ['notifikasi' => $notifikasi])
                     </ul>
                 </div>
             </div>
@@ -199,6 +189,58 @@
             }).catch(() => {});
         }
 
+        // ---- Pembaruan lonceng otomatis (tanpa muat ulang halaman) ----
+        const urlPoll = @json($urlPoll);
+        const INTERVAL_DETIK = 15;
+        const kelasBadge = 'absolute -right-2 -top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white';
+        let htmlTerakhir = null;
+
+        function perbaruiLonceng(data) {
+            const tombol = document.querySelector('[data-notif-btn]');
+            if (!tombol) return;
+
+            let badge = document.querySelector('[data-notif-badge]');
+            if (data.unread > 0) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.setAttribute('data-notif-badge', '');
+                    badge.className = kelasBadge;
+                    tombol.appendChild(badge);
+                }
+                badge.textContent = data.unread > 9 ? '9+' : data.unread;
+            } else if (badge) {
+                badge.remove();
+            }
+
+            const baru = document.getElementById('notif-baru');
+            if (baru) {
+                baru.textContent = data.unread + ' baru';
+                baru.classList.toggle('hidden', data.unread === 0);
+            }
+
+            // Daftar tidak diganti saat dropdown sedang dibuka, agar tidak berubah di depan mata pengguna
+            const terbuka = tombol.closest('[data-dropdown]').querySelector('[data-dropdown-panel]').classList.contains('visible');
+            const daftar = document.getElementById('notif-list');
+            if (daftar && !terbuka && data.html !== htmlTerakhir) {
+                daftar.innerHTML = data.html;
+                htmlTerakhir = data.html;
+                lucide.createIcons();
+            }
+        }
+
+        async function periksaNotifikasi() {
+            if (!urlPoll || document.hidden) return;
+            try {
+                const r = await fetch(urlPoll, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+                if (r.ok) perbaruiLonceng(await r.json());
+            } catch (e) { /* abaikan, coba lagi pada putaran berikutnya */ }
+        }
+
+        if (urlPoll) {
+            setInterval(periksaNotifikasi, INTERVAL_DETIK * 1000);
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) periksaNotifikasi(); });
+        }
+
         dropdowns.forEach((d) => {
             d.querySelector('[data-dropdown-btn]').addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -218,6 +260,84 @@
             if (e.key === 'Escape') dropdowns.forEach(tutup);
         });
     })();
+</script>
+{{-- DIALOG KONFIRMASI --}}
+{{-- Pakai pada form: data-konfirmasi data-konfirmasi-judul="..." data-konfirmasi-pesan="..."
+     data-konfirmasi-tombol="..." data-konfirmasi-gaya="bahaya|peringatan" --}}
+<dialog id="dialog-konfirmasi" class="m-auto w-[calc(100%-2rem)] max-w-sm overflow-hidden rounded-2xl p-0 shadow-2xl">
+    <div class="px-6 pb-5 pt-7 text-center">
+        <span id="konfirmasi-ikon" class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600"></span>
+        <h3 id="konfirmasi-judul" class="mt-4 font-head text-lg font-bold text-brand"></h3>
+        <p id="konfirmasi-pesan" class="mt-1.5 text-sm leading-relaxed text-gray-500"></p>
+    </div>
+    <div class="flex gap-3 border-t border-gray-100 bg-slate-50 px-6 py-4">
+        <button type="button" id="konfirmasi-batal"
+                class="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">Batal</button>
+        <button type="button" id="konfirmasi-ya"
+                class="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700">Ya, Lanjutkan</button>
+    </div>
+</dialog>
+
+<script>
+(function () {
+    const dlg = document.getElementById('dialog-konfirmasi');
+    const $ = (id) => document.getElementById(id);
+    const GAYA = {
+        bahaya:     { ikon: 'trash-2',        wadah: 'bg-red-50 text-red-600',     tombol: 'bg-red-600 hover:bg-red-700' },
+        peringatan: { ikon: 'triangle-alert', wadah: 'bg-amber-50 text-amber-600', tombol: 'bg-amber-500 hover:bg-amber-600' },
+        tanya:      { ikon: 'send',           wadah: 'bg-brand-mint text-brand',   tombol: 'bg-brand hover:bg-brand-soft' },
+    };
+    let formTertunda = null;
+
+    // Mencegat form yang bertanda data-konfirmasi, tampilkan dialog dulu
+    document.addEventListener('submit', (e) => {
+        const form = e.target;
+        if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-konfirmasi')) return;
+        if (e.defaultPrevented) return; // form tidak valid: tidak perlu tanya konfirmasi
+        if (form.dataset.sudahKonfirmasi === '1') return;
+
+        const judul = form.dataset.konfirmasiJudul || 'Apakah Anda yakin?';
+        const pesan = form.dataset.konfirmasiPesan || '';
+
+        // Browser yang terlalu lama: pakai konfirmasi bawaan sebagai cadangan
+        if (!dlg || typeof dlg.showModal !== 'function') {
+            if (!window.confirm(judul + (pesan ? '\n' + pesan : ''))) e.preventDefault();
+            return;
+        }
+
+        e.preventDefault();
+        formTertunda = form;
+        const g = GAYA[form.dataset.konfirmasiGaya] || GAYA.bahaya;
+
+        $('konfirmasi-judul').textContent = judul;
+        $('konfirmasi-pesan').textContent = pesan;
+        $('konfirmasi-ikon').className = 'mx-auto flex h-12 w-12 items-center justify-center rounded-full ' + g.wadah;
+        $('konfirmasi-ikon').innerHTML = '<i data-lucide="' + g.ikon + '" class="h-6 w-6"></i>';
+
+        const ya = $('konfirmasi-ya');
+        ya.className = 'flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition ' + g.tombol;
+        ya.textContent = form.dataset.konfirmasiTombol || 'Ya, Lanjutkan';
+        ya.disabled = false;
+        $('konfirmasi-batal').textContent = form.dataset.konfirmasiBatal || 'Batal';
+
+        lucide.createIcons();
+        dlg.showModal();
+    });
+
+    if (dlg) {
+        $('konfirmasi-ya').addEventListener('click', () => {
+            if (!formTertunda) return;
+            const ya = $('konfirmasi-ya');
+            ya.disabled = true;
+            ya.textContent = 'Memproses...';
+            formTertunda.dataset.sudahKonfirmasi = '1';
+            formTertunda.submit();
+        });
+        $('konfirmasi-batal').addEventListener('click', () => dlg.close());
+        dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); }); // klik di luar kotak = batal
+        dlg.addEventListener('close', () => { formTertunda = null; });
+    }
+})();
 </script>
 </body>
 </html>

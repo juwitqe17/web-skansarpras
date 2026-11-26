@@ -16,8 +16,6 @@
 
     $data = [
         ['Nama',              $user->name,                                                                          'user'],
-        ['Role',              ucfirst($user->role ?? 'peminjam'),                                                   'shield-check'],
-        ['ID User',           $user->id,                                                                            'id-card'],
         ['Jurusan',           $jurusan->nama_jurusan ?? null,                                                       'building-2'],
         ['Email',             $user->email,                                                                         'mail'],
         ['No. WhatsApp',      $user->no_hp,                                                                         'message-circle'],
@@ -44,9 +42,6 @@
                     <h2 class="mt-4 font-head text-xl font-bold tracking-tight">{{ $user->name }}</h2>
                     <p class="mt-1 text-sm text-gray-500">{{ $user->email }}</p>
 
-                    <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
-                        <span class="rounded-full bg-brand-mint px-3 py-1 text-xs font-semibold">{{ ucfirst($user->role ?? 'peminjam') }}</span>
-                    </div>
 
                     @if ($jurusan)
                         <div class="mt-5 rounded-xl bg-slate-50 px-4 py-3 text-left ring-1 ring-gray-100">

@@ -91,7 +91,7 @@
             <div class="flex flex-wrap items-center gap-3">
                 @if ($bisaDihapus > 0 && Route::has('peminjam.riwayat.bersihkan'))
                     <form method="POST" action="{{ route('peminjam.riwayat.bersihkan') }}"
-                          onsubmit="return confirm('Hapus {{ $bisaDihapus }} riwayat yang sudah selesai, ditolak, atau dibatalkan?')">
+                          data-konfirmasi data-konfirmasi-gaya="bahaya" data-konfirmasi-judul="Bersihkan riwayat?" data-konfirmasi-pesan="{{ $bisaDihapus }} riwayat yang sudah selesai, ditolak, atau dibatalkan akan dihapus dari daftar Anda." data-konfirmasi-tombol="Ya, Bersihkan">
                         @csrf
                         @method('DELETE')
                         <button type="submit"
@@ -185,12 +185,12 @@
 
                 <a id="d-detail" href="#" class="mt-5 hidden items-center justify-center gap-2 rounded-xl border border-brand py-2.5 text-sm font-medium transition hover:bg-brand hover:text-white">Lihat detail lengkap <i data-lucide="arrow-right" class="h-4 w-4"></i></a>
 
-                <form id="d-batal" method="POST" class="mt-4 hidden" onsubmit="return confirm('Batalkan pengajuan ini?')">
+                <form id="d-batal" method="POST" class="mt-4 hidden" data-konfirmasi data-konfirmasi-gaya="peringatan" data-konfirmasi-judul="Batalkan pengajuan?" data-konfirmasi-pesan="Pengajuan ini akan dibatalkan dan tidak bisa dikembalikan." data-konfirmasi-tombol="Ya, Batalkan">
                     @csrf @method('PATCH')
                     <button class="w-full rounded-xl bg-red-600 py-3 text-sm font-medium text-white shadow-md shadow-red-600/25 transition hover:bg-red-700">Batalkan Pengajuan</button>
                 </form>
 
-                <form id="d-hapus" method="POST" class="mt-4 hidden" onsubmit="return confirm('Hapus pengajuan ini dari riwayat?')">
+                <form id="d-hapus" method="POST" class="mt-4 hidden" data-konfirmasi data-konfirmasi-gaya="bahaya" data-konfirmasi-judul="Hapus dari riwayat?" data-konfirmasi-pesan="Pengajuan ini akan dihapus dari riwayat Anda." data-konfirmasi-tombol="Ya, Hapus">
                     @csrf @method('DELETE')
                     <button class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50">
                         <i data-lucide="trash-2" class="h-4 w-4"></i> Hapus dari Riwayat
