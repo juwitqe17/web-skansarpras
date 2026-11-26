@@ -519,15 +519,13 @@
 
         {{-- BUTTON --}}
         <div class="mt-5 flex justify-end">
-
             <a
                 id="popoverDetail"
                 href="#"
-                class="rounded-xl bg-[#0f2e24] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#163f32]"
+                class="inline-flex items-center rounded-xl bg-[#0f2e24] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#163f32]"
             >
-                Lihat Detail
+                Lihat Detail Peminjaman
             </a>
-
         </div>
 
     </div>
@@ -536,8 +534,16 @@
 
 @php
     $jadwalData = $jadwals->map(function ($jadwal) {
+        $pengembalianId = optional(optional($jadwal->peminjaman)->pengembalian)->id;
+
+        $pengembalianUrl = $pengembalianId
+            ? route('admin.pengembalian.show', $pengembalianId)
+            : route('admin.pengembalian.index');
+
         return [
             'id' => $jadwal->id,
+            'pengembalian_id' => $pengembalianId,
+            'detail_url' => $pengembalianUrl,
             'status' => $jadwal->status,
             'nama_sarana' => $jadwal->sarana->nama_sarana ?? '-',
             'kode_sarana' => $jadwal->sarana->kode_sarana ?? '-',
@@ -575,6 +581,11 @@
         } else {
             status.textContent = 'Selesai';
             status.className = 'rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600';
+        }
+        
+        const detailLink = document.getElementById('popoverDetail');
+        if (detailLink) {
+            detailLink.href = jadwal.detail_url || '{{ route('admin.pengembalian.index') }}';
         }
 
         const popover = document.getElementById('jadwalPopover');

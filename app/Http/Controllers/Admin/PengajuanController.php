@@ -67,11 +67,11 @@ class PengajuanController extends Controller
         $jurusans = \App\Models\Jurusan::all();
 
         return view('admin.pengajuan.index', compact(
-            'pengajuans', 
-            'jurusans', 
-            'totalPengajuan', 
-            'disetujuiHariIni', 
-            'ditolakCount', 
+            'pengajuans',
+            'jurusans',
+            'totalPengajuan',
+            'disetujuiHariIni',
+            'ditolakCount',
             'menungguCount'
         ));
     }
@@ -80,43 +80,46 @@ class PengajuanController extends Controller
      * Detail pengajuan.
      */
     public function show($id)
-{
-    $peminjaman = Peminjaman::with([
-        'user', 
-        'detailPeminjamans.sarana',
-        'persetujuans'
-    ])->findOrFail($id);
+    {
+        $peminjaman = Peminjaman::with([
+            'user',
+            'detailPeminjamans.sarana',
+            'persetujuans'
+        ])->findOrFail($id);
 
-    // Ambil alasan penolakan terbaru jika statusnya ditolak
-    $latestPersetujuan = $peminjaman->persetujuans()->latest('tanggal_persetujuan')->first();
-    $alasanTolak = ($peminjaman->status === 'ditolak' && $latestPersetujuan) ? $latestPersetujuan->alasan : null;
+        // Ambil alasan penolakan terbaru jika statusnya ditolak
+        $latestPersetujuan = $peminjaman->persetujuans()->latest('tanggal_persetujuan')->first();
+        $alasanTolak = ($peminjaman->status === 'ditolak' && $latestPersetujuan) ? $latestPersetujuan->alasan : null;
 
-    return response()->json([
-        'id' => $peminjaman->id,
-        'status' => $peminjaman->status, // 'menunggu', 'disetujui', atau 'ditolak'
-        'status_label' => ucfirst($peminjaman->status),
-        'user_name' => $peminjaman->user->name ?? 'Peminjam',
-        'user_email' => $peminjaman->user->email ?? '-',
-        'user_kelas' => $peminjaman->user->kelas ?? '-',
-        'user_hp' => $peminjaman->user->no_hp ?? '-',
-        'keperluan' => $peminjaman->keperluan,
-        'created_at' => \Carbon\Carbon::parse($peminjaman->created_at)->translatedFormat('d F Y • H.i'),
-        'tanggal_peminjaman' => \Carbon\Carbon::parse($peminjaman->tanggal_peminjaman)->translatedFormat('l, d F Y'),
-        'waktu' => \Carbon\Carbon::parse($peminjaman->waktu_mulai)->format('H.i') . ' - ' . \Carbon\Carbon::parse($peminjaman->waktu_selesai)->format('H.i') . ' WIB',
-        'lokasi' => $peminjaman->detailPeminjamans->first()->sarana->lokasi ?? '-',
-        'alasan_tolak' => $alasanTolak,
-        'items' => $peminjaman->detailPeminjamans->map(function($detail) {
-            return [
-                'nama' => $detail->sarana->nama_sarana ?? 'Barang',
-                'kode' => $detail->sarana->kode_sarana ?? '-',
-                'jumlah' => $detail->jumlah,
-                'gambar' => $detail->sarana->gambar ? asset('storage/' . $detail->sarana->gambar) : 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=150&auto=format&fit=crop&q=80'
-            ];
-        }),
-        'approve_url' => route('admin.pengajuan.approve', $peminjaman->id),
-        'reject_url' => route('admin.pengajuan.reject', $peminjaman->id),
-    ]);
-}
+        return response()->json([
+            'id' => $peminjaman->id,
+            'status' => $peminjaman->status, // 'menunggu', 'disetujui', atau 'ditolak'
+            'status_label' => ucfirst($peminjaman->status),
+            'user_name' => $peminjaman->user->name ?? 'Peminjam',
+            'user_email' => $peminjaman->user->email ?? '-',
+            'user_kelas' => $peminjaman->user->kelas ?? '-',
+            'user_hp' => $peminjaman->user->no_hp ?? '-',
+            'keperluan' => $peminjaman->keperluan,
+            'created_at' => \Carbon\Carbon::parse($peminjaman->created_at)->translatedFormat('d F Y • H.i'),
+            'tanggal_peminjaman' => \Carbon\Carbon::parse($peminjaman->tanggal_peminjaman)->translatedFormat('l, d F Y'),
+            'waktu' => \Carbon\Carbon::parse($peminjaman->waktu_mulai)->format('H.i') . ' - ' . \Carbon\Carbon::parse($peminjaman->waktu_selesai)->format('H.i') . ' WIB',
+            'lokasi' => $peminjaman->detailPeminjamans->first()->sarana->lokasi ?? '-',
+            'alasan_tolak' => $alasanTolak,
+            'items' => $peminjaman->detailPeminjamans->map(function($detail) {
+                return [
+                    'nama' => $detail->sarana->nama_sarana ?? 'Barang',
+                    'kode' => $detail->sarana->kode_sarana ?? '-',
+                    'jumlah' => $detail->jumlah,
+                    'gambar' => $detail->sarana->gambar //? asset('storage/' . $detail->sarana->gambar) : 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=150&auto=format&fit=crop&q=80'
+                ];
+            }),
+            'approve_url' => route('admin.pengajuan.approve', $peminjaman->id),
+            'reject_url' => route('admin.pengajuan.reject', $peminjaman->id),
+        ]);
+
+        
+        
+    }
 
    /**
      * Setujui pengajuan.
@@ -135,7 +138,7 @@ class PengajuanController extends Controller
                 'status' => 'disetujui',
             ]);
 
-            // Kurangi stok jumlah_tersedia sesuai jumlah barang yang dipinjam
+            // Kurangi stok jumlah_tersedia & buat jadwal penggunaan per barang
             $peminjaman->loadMissing('detailPeminjamans.sarana');
             foreach ($peminjaman->detailPeminjamans as $detail) {
                 if (!$detail->sarana) {
@@ -147,6 +150,15 @@ class PengajuanController extends Controller
                 }
 
                 $detail->sarana->decrement('jumlah_tersedia', $detail->jumlah);
+
+                \App\Models\JadwalPenggunaan::create([
+                    'peminjaman_id' => $peminjaman->id,
+                    'sarana_id'     => $detail->sarana_id,
+                    'tanggal'       => $peminjaman->tanggal_peminjaman,
+                    'waktu_mulai'   => $peminjaman->waktu_mulai,
+                    'waktu_selesai' => $peminjaman->waktu_selesai,
+                    'status'        => 'berlangsung', // sesuaikan jika kolom status di jadwal_penggunaans memakai nilai/enum berbeda
+                ]);
             }
 
             Persetujuan::create([
@@ -169,41 +181,41 @@ class PengajuanController extends Controller
 
         return redirect()
             ->back()
-            ->with('success', 'Pengajuan berhasil disetujui dan masuk ke manajemen pengembalian.');
+            ->with('success', 'Pengajuan berhasil disetujui dan masuk ke manajemen pengembalian & jadwal penggunaan.');
     }
 
     /**
      * Tolak pengajuan.
      */
-public function reject(Request $request, Peminjaman $peminjaman)
-{
-    // Alasan wajib diketik oleh admin
-    $data = $request->validate([
-        'alasan' => ['required', 'string', 'min:5', 'max:500'],
-    ], [
-        'alasan.required' => 'Alasan penolakan wajib diisi.',
-        'alasan.min'      => 'Alasan penolakan minimal 5 karakter.',
-        'alasan.max'      => 'Alasan penolakan maksimal 500 karakter.',
-    ]);
+    public function reject(Request $request, Peminjaman $peminjaman)
+    {
+        // Alasan wajib diketik oleh admin
+        $data = $request->validate([
+            'alasan' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'alasan.required' => 'Alasan penolakan wajib diisi.',
+            'alasan.min'      => 'Alasan penolakan minimal 5 karakter.',
+            'alasan.max'      => 'Alasan penolakan maksimal 500 karakter.',
+        ]);
 
-    // Hanya pengajuan yang masih menunggu yang boleh ditolak
-    if ($peminjaman->status !== 'menunggu') {
-        return back()->with('error', 'Hanya pengajuan yang masih menunggu yang bisa ditolak.');
+        // Hanya pengajuan yang masih menunggu yang boleh ditolak
+        if ($peminjaman->status !== 'menunggu') {
+            return back()->with('error', 'Hanya pengajuan yang masih menunggu yang bisa ditolak.');
+        }
+
+        // Simpan status dan alasan. Alasan inilah yang dibaca halaman detail peminjam.
+        $peminjaman->forceFill([
+            'status'  => 'ditolak',
+            'catatan' => $data['alasan'],
+        ])->save();
+
+        // >>> Jika method reject Anda yang lama juga mencatat persetujuan
+        //     (tabel persetujuans, admin_id, dll), pertahankan bagian itu di sini. <<<
+
+        // Notifikasi ke peminjam dikirim otomatis oleh PeminjamanObserver
+        // saat status berubah menjadi 'ditolak' (lengkap dengan alasannya).
+
+        return redirect()->route('admin.pengajuan.show', $peminjaman)
+            ->with('success', 'Pengajuan ditolak dan alasannya sudah dikirim ke peminjam.');
     }
-
-    // Simpan status dan alasan. Alasan inilah yang dibaca halaman detail peminjam.
-    $peminjaman->forceFill([
-        'status'  => 'ditolak',
-        'catatan' => $data['alasan'],
-    ])->save();
-
-    // >>> Jika method reject Anda yang lama juga mencatat persetujuan
-    //     (tabel persetujuans, admin_id, dll), pertahankan bagian itu di sini. <<<
-
-    // Notifikasi ke peminjam dikirim otomatis oleh PeminjamanObserver
-    // saat status berubah menjadi 'ditolak' (lengkap dengan alasannya).
-
-    return redirect()->route('admin.pengajuan.show', $peminjaman)
-        ->with('success', 'Pengajuan ditolak dan alasannya sudah dikirim ke peminjam.');
-}
 }
