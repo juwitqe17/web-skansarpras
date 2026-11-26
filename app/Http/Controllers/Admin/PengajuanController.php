@@ -134,6 +134,20 @@ class PengajuanController extends Controller
                 'status' => 'disetujui',
             ]);
 
+            // Kurangi stok jumlah_tersedia sesuai jumlah barang yang dipinjam
+            $peminjaman->loadMissing('detailPeminjamans.sarana');
+            foreach ($peminjaman->detailPeminjamans as $detail) {
+                if (!$detail->sarana) {
+                    continue;
+                }
+
+                if ($detail->sarana->jumlah_tersedia < $detail->jumlah) {
+                    throw new \RuntimeException("Stok {$detail->sarana->nama_sarana} tidak mencukupi.");
+                }
+
+                $detail->sarana->decrement('jumlah_tersedia', $detail->jumlah);
+            }
+
             Persetujuan::create([
                 'peminjaman_id'       => $peminjaman->id,
                 'admin_id'            => auth()->id(),

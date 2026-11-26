@@ -23,7 +23,7 @@
     </h1>
 
     {{-- KANAN --}}
-    <div class="flex items-center gap-4">
+    <div class="flex items-center gap-3">
 
         {{-- TOMBOL NOTIFIKASI --}}
         <div class="relative" data-admin-popup>
@@ -33,21 +33,23 @@
                     aria-haspopup="true"
                     aria-expanded="false"
                     aria-controls="adminNotifMenu"
-                    class="relative flex h-10 w-10 items-center justify-center rounded-full text-gray-600 transition hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#073b2b]/40">
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 17H9m8-1V10a5 5 0 00-10 0v6l-2 2h14l-2-2z" />
+                    class="group relative flex h-10 w-10 items-center justify-center rounded-full text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-[#073b2b] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#073b2b]/40">
+                {{-- Icon Bell (Heroicons Outline) --}}
+                <svg class="h-6 w-6 transition-transform duration-200 group-hover:rotate-12" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                 </svg>
 
                 {{-- Badge jumlah notifikasi --}}
                 @if ($unreadCount > 0)
-                    <span class="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                    <span class="absolute right-1 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white animate-pulse">
                         {{ $unreadCount > 9 ? '9+' : $unreadCount }}
                     </span>
                 @endif
             </button>
 
+            {{-- POPUP NOTIFIKASI (Dengan Animasi Smooth) --}}
             <div id="adminNotifMenu"
-                 class="hidden absolute right-0 z-50 mt-3 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white shadow-xl">
+                 class="pointer-events-none invisible opacity-0 scale-95 -translate-y-2 origin-top-right transition-all duration-200 ease-out absolute right-0 z-50 mt-3 w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white shadow-xl">
 
                 {{-- Header popup --}}
                 <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
@@ -61,7 +63,7 @@
                     <button type="button"
                             onclick="closeAdminPopup('adminNotifMenu')"
                             aria-label="Tutup notifikasi"
-                            class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#073b2b]/40">
+                            class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#073b2b]/40">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -73,7 +75,7 @@
                     <div class="flex flex-col items-center px-4 py-8 text-center">
                         <span class="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400">
                             <svg class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17H9m8-1V10a5 5 0 00-10 0v6l-2 2h14l-2-2z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                             </svg>
                         </span>
                         <p class="mt-3 text-xs text-gray-400">Belum ada notifikasi saat ini.</p>
@@ -81,7 +83,7 @@
                 @else
                     <ul class="max-h-80 divide-y divide-gray-100 overflow-y-auto">
                         @foreach ($notifications as $notif)
-                            <li class="flex gap-3 px-4 py-3 transition hover:bg-gray-50">
+                            <li class="flex gap-3 px-4 py-3 transition-colors duration-150 hover:bg-gray-50">
                                 <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#073b2b]"></span>
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-semibold text-gray-900">
@@ -109,14 +111,16 @@
                     aria-haspopup="true"
                     aria-expanded="false"
                     aria-controls="adminProfileMenu"
-                    class="flex items-center gap-2 rounded-full p-1.5 text-gray-600 transition hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#073b2b]/40">
-                <span class="flex h-9 w-9 items-center justify-center rounded-full bg-[#073b2b] text-sm font-bold text-white">
-                    {{ strtoupper(substr($user->name ?? 'A', 0, 1)) }}
-                </span>
+                    class="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 transition-all duration-200 hover:bg-gray-100 hover:text-[#073b2b] active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#073b2b]/40">
+                {{-- Icon User Circle (Heroicons Outline - Sesuai Desain UI) --}}
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
             </button>
 
+            {{-- POPUP PROFIL (Dengan Animasi Smooth) --}}
             <div id="adminProfileMenu"
-                 class="hidden absolute right-0 z-50 mt-3 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white shadow-xl">
+                 class="pointer-events-none invisible opacity-0 scale-95 -translate-y-2 origin-top-right transition-all duration-200 ease-out absolute right-0 z-50 mt-3 w-[min(18rem,calc(100vw-2rem))] rounded-2xl border border-gray-200 bg-white shadow-xl">
 
                 {{-- Header popup --}}
                 <div class="flex items-center justify-between border-b border-gray-100 px-4 py-3">
@@ -125,7 +129,7 @@
                     <button type="button"
                             onclick="closeAdminPopup('adminProfileMenu')"
                             aria-label="Tutup profil"
-                            class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#073b2b]/40">
+                            class="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors duration-150 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#073b2b]/40">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -134,7 +138,7 @@
 
                 {{-- Info akun --}}
                 <div class="flex items-center gap-3 px-4 py-4">
-                    <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#073b2b] text-lg font-bold text-white">
+                    <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#073b2b] text-base font-bold text-white shadow-xs">
                         {{ strtoupper(substr($user->name ?? 'A', 0, 1)) }}
                     </span>
                     <div class="min-w-0">
@@ -146,7 +150,7 @@
                 {{-- Keluar --}}
                 <form method="POST" action="{{ route('logout') }}" class="border-t border-gray-100 p-3">
                     @csrf
-                    <button type="submit" class="w-full rounded-xl bg-red-50 py-2.5 text-xs font-semibold text-red-600 transition hover:bg-red-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300">
+                    <button type="submit" class="w-full rounded-xl bg-red-50 py-2.5 text-xs font-semibold text-red-600 transition-all duration-150 hover:bg-red-100 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-red-300">
                         Keluar Akun
                     </button>
                 </form>
@@ -163,7 +167,13 @@
         const el = document.getElementById(id);
         if (!el) return;
 
-        el.classList.toggle('hidden', !open);
+        if (open) {
+            el.classList.remove('invisible', 'opacity-0', 'scale-95', '-translate-y-2', 'pointer-events-none');
+            el.classList.add('visible', 'opacity-100', 'scale-100', 'translate-y-0', 'pointer-events-auto');
+        } else {
+            el.classList.remove('visible', 'opacity-100', 'scale-100', 'translate-y-0', 'pointer-events-auto');
+            el.classList.add('invisible', 'opacity-0', 'scale-95', '-translate-y-2', 'pointer-events-none');
+        }
 
         const trigger = document.querySelector('[aria-controls="' + id + '"]');
         if (trigger) trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -171,7 +181,7 @@
 
     function toggleAdminPopup(id) {
         const el = document.getElementById(id);
-        const willOpen = el ? el.classList.contains('hidden') : false;
+        const willOpen = el ? el.classList.contains('invisible') : false;
 
         adminPopups.forEach(menuId => setAdminPopupState(menuId, menuId === id && willOpen));
     }

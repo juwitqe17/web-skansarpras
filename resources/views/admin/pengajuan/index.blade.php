@@ -3,9 +3,9 @@
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
 @section('page-content')
-<div x-data="{ 
-    openModal: false, 
-    loading: false, 
+<div x-data="{
+    openModal: false,
+    loading: false,
     data: {},
     approveModalOpen: false,
     approveUrl: '',
@@ -41,7 +41,7 @@
     <!-- Header Page -->
     <div>
         <h1 class="text-2xl font-bold text-gray-900">Manajemen Pengajuan</h1>
-        <p class="text-sm text-gray-400 mt-0.5">Persetujuan dan pemantauan pengajuan sarana & prasarana.</p>
+        <p class="text-sm text-gray-500 mt-1">Persetujuan dan pemantauan pengajuan sarana & prasarana.</p>
     </div>
 
     <!-- Alert Notifikasi -->
@@ -73,7 +73,7 @@
         <input type="hidden" name="search" value="{{ request('search') }}">
 
         <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-5">
-            
+
             <!-- Baris Pilih Kategori Departemen / Jurusan -->
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
                 <div class="flex items-center space-x-3">
@@ -213,7 +213,7 @@
                                 <ul class="list-disc list-inside space-y-1">
                                     @forelse($item->detailPeminjamans as $detail)
                                         <li>
-                                            <span class="font-semibold text-gray-800">{{ $detail->sarana->nama_sarana ?? 'Sarana' }}</span> 
+                                            <span class="font-semibold text-gray-800">{{ $detail->sarana->nama_sarana ?? 'Sarana' }}</span>
                                             <span class="text-gray-500">({{ $detail->jumlah }} Unit)</span>
                                         </li>
                                     @empty
@@ -347,7 +347,7 @@
     </div>
 
     <!-- ================= MODAL POP-UP DETAIL (ALPINE.JS) ================= -->
-    <div x-show="openModal" 
+    <div x-show="openModal"
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -357,9 +357,9 @@
          class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto"
          style="display: none;">
 
-        <div @click.away="openModal = false" 
+        <div @click.away="openModal = false"
              class="bg-white rounded-3xl shadow-2xl border border-slate-200/80 w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6 my-auto relative">
-            
+
             <!-- Indicator Loading -->
             <div x-show="loading" class="py-12 text-center space-y-3">
                 <div class="inline-block w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>

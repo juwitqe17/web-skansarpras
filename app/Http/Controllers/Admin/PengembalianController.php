@@ -84,6 +84,12 @@ class PengembalianController extends Controller
      */
     public function process(Request $request, Pengembalian $pengembalian)
     {
+        if ($pengembalian->status === 'selesai') {
+            return redirect()
+                ->route('admin.pengembalian.index')
+                ->with('error', 'Pengembalian ini sudah diverifikasi sebelumnya.');
+        }
+
         $request->validate([
             'kondisi_pengembalian' => 'required',
             'kelayakan'            => 'nullable|array',
@@ -103,6 +109,24 @@ class PengembalianController extends Controller
             $pengembalian->peminjaman()->update([
                 'status' => 'selesai',
             ]);
+
+            // 3. Kembalikan stok jumlah_tersedia ke sarana
+            $pengembalian->loadMissing('peminjaman.detailPeminjamans.sarana');
+            if ($pengembalian->peminjaman) {
+                foreach ($pengembalian->peminjaman->detailPeminjamans as $detail) {
+                    if (!$detail->sarana) {
+                        continue;
+                    }
+
+                    // Cegah jumlah_tersedia melebihi total jumlah unit barang
+                    $sisaKuotaBisaKembali = max(0, $detail->sarana->jumlah - $detail->sarana->jumlah_tersedia);
+                    $tambahStok = min($detail->jumlah, $sisaKuotaBisaKembali);
+
+                    if ($tambahStok > 0) {
+                        $detail->sarana->increment('jumlah_tersedia', $tambahStok);
+                    }
+                }
+            }
         });
 
         return redirect()->route('admin.pengembalian.index')->with('success', 'Pengembalian barang berhasil diverifikasi dan status peminjaman menjadi selesai.');

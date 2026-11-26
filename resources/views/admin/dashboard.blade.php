@@ -84,11 +84,11 @@
 
     <!-- Main Content Layout (Chart + Sidebar Widgets) -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         <!-- Left Section: Chart -->
         <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between">
             <h2 class="text-center text-base font-semibold text-gray-900 mb-6">Tren Peminjaman & Ketersediaan Sarana dan Prasarana</h2>
-            
+
             <div class="relative h-72 w-full">
                 <canvas id="sarprasChart"></canvas>
             </div>
@@ -96,7 +96,7 @@
 
         <!-- Right Section: Info Widgets -->
         <div class="space-y-4">
-            
+
             <!-- Tenggat Pengembalian -->
             <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-3">
                 <div class="flex items-center space-x-2 text-gray-700 font-semibold text-xs border-b pb-2">
@@ -105,19 +105,64 @@
                     </svg>
                     <span>Tenggat Pengembalian</span>
                 </div>
-                
+
                 @forelse($tenggatPengembalian ?? [] as $item)
-                    <div class="p-2.5 bg-gray-50 rounded-lg border border-gray-100 text-xs space-y-1">
-                        <div class="flex items-center space-x-2">
-                            @if($item->status == 'overdue')
-                                <span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Overdue</span>
-                            @else
-                                <span class="bg-yellow-400 text-gray-900 text-[10px] font-bold px-1.5 py-0.5 rounded">Hari ini</span>
+                    @php
+                        $firstDetail = $item->detailPeminjamans->first();
+                        $saranaObj = $firstDetail->sarana ?? $item->sarana ?? null;
+                        $namaBarang = $saranaObj->nama_sarana ?? ($saranaObj->nama_barang ?? ($saranaObj->nama ?? 'Sarana'));
+                        $peminjamNama = $item->user->name ?? ($item->peminjam->name ?? 'Peminjam');
+
+                        // Tanggal & jam rencana selesai sesuai kolom di tabel peminjamans
+                        $tglTenggat = !empty($item->tanggal_peminjaman)
+                            ? \Carbon\Carbon::parse($item->tanggal_peminjaman)
+                            : null;
+
+                        $waktuSelesai = null;
+                        if (!empty($item->waktu_selesai)) {
+                            $rawWaktu = (string) $item->waktu_selesai;
+                            $formatWaktu = strlen($rawWaktu) === 5 ? 'H:i' : 'H:i:s';
+                            $waktuSelesai = \Carbon\Carbon::createFromFormat($formatWaktu, $rawWaktu)->format('H:i');
+                        }
+
+                        $isOverdue = in_array($item->status ?? '', ['disetujui', 'sedang_dipinjam', 'terlambat'], true)
+                            && ($item->status === 'terlambat' || ($tglTenggat && $tglTenggat->startOfDay()->lt(now()->startOfDay())));
+
+                        $pengembalianId = $item->pengembalian->id ?? null;
+                        $targetUrl = $pengembalianId
+                            ? route('admin.pengembalian.show', $pengembalianId)
+                            : route('admin.pengembalian.index', ['search' => $peminjamNama]);
+                    @endphp
+
+                    <div class="p-2.5 bg-gray-50 hover:bg-emerald-50/50 rounded-lg border border-gray-100 text-xs space-y-1.5 transition">
+                        <a href="{{ $targetUrl }}" class="block space-y-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center space-x-2 min-w-0">
+                                    @if($isOverdue)
+                                        <span class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">Overdue</span>
+                                    @else
+                                        <span class="bg-yellow-400 text-gray-900 text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0">Hari ini</span>
+                                    @endif
+                                    <span class="font-bold text-gray-800 truncate">{{ $namaBarang }}</span>
+                                </div>
+                                <span class="text-[11px] font-semibold text-[#073b2b] shrink-0">Proses &gt;</span>
+                            </div>
+
+                            <p class="text-gray-500 text-[11px]">
+                                <span class="font-medium text-gray-700">Peminjam :</span> {{ $peminjamNama }}
+                            </p>
+
+                            @if($tglTenggat)
+                                <p class="text-gray-500 text-[11px]">
+                                    <span class="font-medium text-gray-700">Tenggat :</span>
+                                    {{ $tglTenggat->translatedFormat('d M Y') }}
+                                    @if($waktuSelesai)
+                                        <span class="text-gray-400">•</span>
+                                        <span class="font-medium text-gray-700">Selesai :</span> {{ $waktuSelesai }} WIB
+                                    @endif
+                                </p>
                             @endif
-                            <span class="font-bold text-gray-800">{{ $item->sarana->nama_barang ?? ($item->sarana->nama ?? 'Sarana') }}</span>
-                        </div>
-                        <p class="text-gray-500 text-[11px]"><span class="font-medium text-gray-700">Peminjam :</span> {{ $item->peminjam->name ?? 'Peminjam' }}</p>
-                        <p class="text-gray-500 text-[11px]"><span class="font-medium text-gray-700">Tenggat :</span> {{ \Carbon\Carbon::parse($item->tanggal_kembali ?? $item->created_at)->translatedFormat('d M Y, H.i') }} WIB</p>
+                        </a>
                     </div>
                 @empty
                     <p class="text-xs text-gray-400 text-center py-2">Tidak ada tenggat pengembalian terdekat.</p>
@@ -135,43 +180,37 @@
 
                 <div class="space-y-3 text-xs pl-2 relative border-l-2 border-gray-200 ml-1">
                     @forelse($aktivitasTerbaru ?? [] as $akt)
-                        <div class="relative pl-3">
-                            <span class="w-2.5 h-2.5 {{ $akt->status == 'dipinjam' ? 'bg-green-500' : 'bg-yellow-400' }} rounded-full absolute -left-[18px] top-1"></span>
-                            <p class="text-gray-700">
-                                <span class="font-bold">[{{ $akt->created_at->format('H.i') }}] {{ $akt->peminjam->name ?? 'User' }}</span> 
-                                {{ $akt->status == 'dipinjam' ? 'meminjam' : 'mengajukan' }} {{ $akt->sarana->nama_barang ?? 'Sarana' }}
-                            </p>
-                        </div>
+                        @php
+                            $firstDetail = $akt->detailPeminjamans->first();
+                            $saranaObj = $firstDetail->sarana ?? $akt->sarana ?? null;
+                            $namaBarang = $saranaObj->nama_sarana ?? ($saranaObj->nama_barang ?? 'Sarana');
+                            $peminjamNama = $akt->user->name ?? ($akt->peminjam->name ?? 'User');
+                            $dotColor = match($akt->status ?? '') {
+                                'disetujui', 'dipinjam' => 'bg-green-500',
+                                'selesai' => 'bg-blue-500',
+                                'ditolak' => 'bg-red-500',
+                                default => 'bg-yellow-400',
+                            };
+                            $aksiText = match($akt->status ?? '') {
+                                'disetujui', 'dipinjam' => 'meminjam',
+                                'selesai' => 'mengembalikan',
+                                'ditolak' => 'ditolak untuk',
+                                default => 'mengajukan',
+                            };
+                           $jamWib = $akt->created_at ? \Carbon\Carbon::parse($akt->created_at)->timezone('Asia/Jakarta')->format('H.i') : '--.--';
+                            @endphp
+                            <div class="relative pl-3">
+                                <span class="w-2.5 h-2.5 {{ $dotColor }} rounded-full absolute -left-[18px] top-1"></span>
+                                <p class="text-gray-700">
+                                    <span class="font-bold">[{{ $jamWib }}] {{ $peminjamNama }}</span>
+                                    {{ $aksiText }} {{ $namaBarang }}
+                                </p>
+                            </div>
                     @empty
                         <p class="text-xs text-gray-400 text-center py-2">Belum ada aktivitas terbaru.</p>
                     @endforelse
                 </div>
             </div>
-
-            <!-- Kondisi Sarpras -->
-            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm space-y-2">
-                <div class="flex items-center space-x-2 text-gray-700 font-semibold text-xs border-b pb-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
-                    </svg>
-                    <span>Kondisi Sarpras</span>
-                </div>
-                <div class="space-y-1.5 text-xs">
-                    <div class="flex justify-between items-center text-gray-700">
-                        <span class="font-bold">Rusak :</span>
-                        <span class="text-gray-600">{{ $kondisiRusak ?? 0 }} barang</span>
-                    </div>
-                    <div class="flex justify-between items-center text-gray-700">
-                        <span class="font-bold">Perbaikan :</span>
-                        <span class="text-gray-600">{{ $kondisiPerbaikan ?? 0 }} barang</span>
-                    </div>
-                    <div class="flex justify-between items-center text-gray-700">
-                        <span class="font-bold">Hilang :</span>
-                        <span class="text-gray-600">{{ $kondisiHilang ?? 0 }} barang</span>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 </div>

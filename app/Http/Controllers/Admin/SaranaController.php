@@ -131,6 +131,20 @@ class SaranaController extends Controller
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
+        //Hitung berapa unit barang ini yang sedang dipinjam (status peminjaman = disetujui)
+        $sedangDipinjam = \App\Models\DetailPeminjaman::where('sarana_id', $sarana->id)
+            ->whereHas('peminjaman', function ($q) {
+                $q->where('status', 'disetujui');
+            })
+            ->sum('jumlah');
+
+        // Cegah admin mengubah total unit menjadi lebih kecil dari yang sedang dipinjam
+        if ($validated['jumlah'] < $sedangDipinjam) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['jumlah' => "Total unit tidak boleh kurang dari {$sedangDipinjam} unit karena sedang dipinjam."]);
+        }
+
         // Handling Update Gambar
         if ($request->hasFile('gambar')) {
             if ($sarana->gambar && Storage::disk('public')->exists($sarana->gambar)) {
@@ -139,9 +153,8 @@ class SaranaController extends Controller
             $validated['gambar'] = $request->file('gambar')->store('sarana', 'public');
         }
 
-        // Menyesuaikan jumlah_tersedia jika jumlah total diubah
-        $selisihJumlah = $validated['jumlah'] - $sarana->jumlah;
-        $validated['jumlah_tersedia'] = max(0, $sarana->jumlah_tersedia + $selisihJumlah);
+        // Jumlah tersedia = Total Unit Baru - Unit yang Sedang Dipinjam
+        $validated['jumlah_tersedia'] = $validated['jumlah'] - $sedangDipinjam;
 
         $sarana->update($validated);
 
