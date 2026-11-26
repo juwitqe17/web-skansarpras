@@ -82,7 +82,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('/jadwal/{jadwalPenggunaan}', [JadwalPenggunaanController::class, 'show'])->name('jadwal.show');
         Route::get('/jadwal/export-pdf', [JadwalPenggunaanController::class, 'exportPdf'])->name('admin.jadwal.export-pdf');
 
-        
+
 
     });
 

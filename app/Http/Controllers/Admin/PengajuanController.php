@@ -7,6 +7,7 @@ use App\Models\Peminjaman;
 use App\Models\Persetujuan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Notifications\PengajuanDiproses;
 
 class PengajuanController extends Controller
 {
@@ -174,35 +175,35 @@ class PengajuanController extends Controller
     /**
      * Tolak pengajuan.
      */
-    public function reject(Request $request, Peminjaman $peminjaman)
-    {
-        $validated = $request->validate([
-            'alasan' => 'required|string|max:500',
-        ]);
+public function reject(Request $request, Peminjaman $peminjaman)
+{
+    // Alasan wajib diketik oleh admin
+    $data = $request->validate([
+        'alasan' => ['required', 'string', 'min:5', 'max:500'],
+    ], [
+        'alasan.required' => 'Alasan penolakan wajib diisi.',
+        'alasan.min'      => 'Alasan penolakan minimal 5 karakter.',
+        'alasan.max'      => 'Alasan penolakan maksimal 500 karakter.',
+    ]);
 
-        if ($peminjaman->status !== 'menunggu') {
-            return redirect()
-                ->back()
-                ->with('error', 'Pengajuan ini sudah diproses.');
-        }
-
-        DB::transaction(function () use ($peminjaman, $validated) {
-
-            $peminjaman->update([
-                'status' => 'ditolak',
-            ]);
-
-            Persetujuan::create([
-                'peminjaman_id' => $peminjaman->id,
-                'admin_id' => auth()->id(),
-                'status' => 'ditolak',
-                'tanggal_persetujuan' => now(),
-                'alasan' => $validated['alasan'],
-            ]);
-        });
-
-        return redirect()
-            ->back()
-            ->with('success', 'Pengajuan berhasil ditolak.');
+    // Hanya pengajuan yang masih menunggu yang boleh ditolak
+    if ($peminjaman->status !== 'menunggu') {
+        return back()->with('error', 'Hanya pengajuan yang masih menunggu yang bisa ditolak.');
     }
+
+    // Simpan status dan alasan. Alasan inilah yang dibaca halaman detail peminjam.
+    $peminjaman->forceFill([
+        'status'  => 'ditolak',
+        'catatan' => $data['alasan'],
+    ])->save();
+
+    // >>> Jika method reject Anda yang lama juga mencatat persetujuan
+    //     (tabel persetujuans, admin_id, dll), pertahankan bagian itu di sini. <<<
+
+    // Notifikasi ke peminjam dikirim otomatis oleh PeminjamanObserver
+    // saat status berubah menjadi 'ditolak' (lengkap dengan alasannya).
+
+    return redirect()->route('admin.pengajuan.show', $peminjaman)
+        ->with('success', 'Pengajuan ditolak dan alasannya sudah dikirim ke peminjam.');
+}
 }

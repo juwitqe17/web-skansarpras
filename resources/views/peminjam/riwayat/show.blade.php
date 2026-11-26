@@ -41,11 +41,21 @@
     $foto   = \App\Support\SaranaFoto::url($sar);
     $mulai  = data_get($p, 'waktu_mulai') ?? data_get($p, 'jam_mulai');
     $selesai = data_get($p, 'waktu_selesai') ?? data_get($p, 'jam_selesai');
-    $catatan = data_get($p, 'catatan') ?? data_get($p, 'alasan_penolakan');
+    // Catatan / alasan dari petugas: dicari di data pengajuan, lalu di catatan persetujuan terakhir
+    $persetujuan = collect(data_get($p, 'persetujuans', []))->sortByDesc('id')->first();
+    $catatan = collect([
+        data_get($p, 'alasan_penolakan'),
+        data_get($p, 'catatan'),
+        data_get($persetujuan, 'alasan'),
+        data_get($persetujuan, 'catatan'),
+        data_get($persetujuan, 'keterangan'),
+    ])->first(fn ($v) => filled($v));
+    $alasanTolak = $s === 'ditolak' ? ($catatan ?: 'Petugas belum mencantumkan alasan penolakan.') : null;
 
     // Linimasa
-    $langkah = ['Diajukan', 'Disetujui', 'Dipinjam', 'Dikembalikan'];
-    $aktif = ['diproses' => 0, 'disetujui' => 1, 'dipinjam' => 2, 'terlambat' => 2, 'dikembalikan' => 3][$s] ?? 0;
+    $langkah = ['Pengajuan', 'Disetujui / Dipinjam', 'Dikembalikan'];
+    // Tahap 2 = disetujui sekaligus dipinjam. Setelah dikembalikan, semua tahap bercentang.
+    $aktif = ['diproses' => 0, 'disetujui' => 1, 'dipinjam' => 1, 'terlambat' => 1, 'dikembalikan' => 3][$s] ?? 0;
     $gagal = in_array($s, ['ditolak', 'dibatalkan']);
     $bisaBatal = $s === 'diproses' && \Illuminate\Support\Facades\Route::has('peminjam.pengajuan.cancel');
     $bisaHapus = in_array($s, ['ditolak', 'dibatalkan', 'dikembalikan']) && \Illuminate\Support\Facades\Route::has('peminjam.riwayat.destroy');
@@ -68,12 +78,22 @@
         {{-- Linimasa status --}}
         <div class="mt-8 rounded-2xl bg-white p-6 shadow-lg shadow-brand/10 ring-1 ring-black/5 sm:p-8">
             @if ($gagal)
-                <div class="flex items-start gap-3 rounded-xl px-4 py-3 text-sm {{ $s === 'ditolak' ? 'bg-red-50 text-red-700' : 'bg-slate-100 text-slate-600' }}">
-                    <i data-lucide="{{ $s === 'ditolak' ? 'circle-x' : 'ban' }}" class="mt-0.5 h-4 w-4 shrink-0"></i>
-                    <p>{{ $s === 'ditolak' ? 'Pengajuan ini ditolak oleh petugas.' : 'Pengajuan ini telah Anda batalkan.' }}</p>
-                </div>
+                @if ($s === 'ditolak')
+                    <div class="rounded-xl bg-red-50 px-5 py-4 text-red-700 ring-1 ring-red-100">
+                        <div class="flex items-center gap-2 text-sm font-semibold">
+                            <i data-lucide="circle-x" class="h-4 w-4 shrink-0"></i> Pengajuan ditolak oleh petugas
+                        </div>
+                        <p class="mt-3 text-[11px] font-semibold uppercase tracking-wide text-red-500">Alasan penolakan</p>
+                        <p class="mt-1 text-sm leading-relaxed">{{ $alasanTolak }}</p>
+                    </div>
+                @else
+                    <div class="flex items-start gap-3 rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">
+                        <i data-lucide="ban" class="mt-0.5 h-4 w-4 shrink-0"></i>
+                        <p>Pengajuan ini telah Anda batalkan.</p>
+                    </div>
+                @endif
             @else
-                <ol class="grid grid-cols-4 gap-2">
+                <ol class="grid grid-cols-3 gap-2">
                     @foreach ($langkah as $i => $l)
                         <li class="relative text-center">
                             @if ($i > 0)<span class="absolute right-1/2 top-4 -z-0 h-0.5 w-full {{ $i <= $aktif ? 'bg-brand' : 'bg-gray-200' }}"></span>@endif
@@ -124,7 +144,7 @@
                     <p class="mt-1 text-sm leading-relaxed">{{ data_get($p, 'keperluan') ?? data_get($p, 'tujuan', '-') }}</p>
                 </div>
 
-                @if ($catatan)
+                @if ($catatan && $s !== 'ditolak')
                     <div class="mt-5 flex items-start gap-3 rounded-xl bg-slate-50 px-4 py-3.5 ring-1 ring-gray-100">
                         <i data-lucide="message-square-text" class="mt-0.5 h-4 w-4 shrink-0 text-gray-400"></i>
                         <div><p class="text-xs text-gray-500">Catatan dari petugas</p><p class="mt-0.5 text-sm">{{ $catatan }}</p></div>

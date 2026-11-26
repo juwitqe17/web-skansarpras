@@ -5,11 +5,47 @@
 @php
     $ph = 'bg-gradient-to-br from-brand-mint to-brand-soft/30 text-transparent ring-1 ring-black/5';
     $dipilih = old('sarana_id', request('sarana'));
-    // Peminjaman hanya untuk hari ini, dan waktu selesai maksimal pukul 15.00 (WIB)
+    // Peminjaman hanya untuk hari ini (WIB), dipilih per jam pelajaran
     $sekarang = now('Asia/Jakarta');
     $hariIni = $sekarang->toDateString();
-    $batasJam = '15:00';
-    $sudahTutup = $sekarang->format('H:i') >= $batasJam;
+
+    // ==== JAM PELAJARAN (sesuai jadwal sekolah): ubah daftar ini jika jadwal berubah ====
+    // [nama, mulai, selesai, apakah istirahat]. Baris istirahat hanya ditampilkan, tidak bisa dipilih sendiri.
+   
+$jamPelajaran = [
+    ['Jam ke-1',  '06:45', '07:25', false],
+    ['Jam ke-2',  '07:25', '08:05', false],
+    ['Jam ke-3',  '08:05', '08:45', false],
+    ['Jam ke-4',  '08:45', '09:25', false],
+
+    ['Istirahat', '09:25', '09:40', true],
+
+    ['Jam ke-5',  '09:40', '10:20', false],
+    ['Jam ke-6',  '10:20', '11:00', false],
+    ['Jam ke-7',  '11:00', '11:40', false],
+
+    ['Istirahat', '11:40', '12:40', true],
+
+    ['Jam ke-8',  '12:40', '13:20', false],
+    ['Jam ke-9',  '13:20', '14:00', false],
+    ['Jam ke-10', '14:00', '14:40', false],
+    ['Jam ke-11', '14:40', '15:00', false],
+];
+
+
+    $jam = collect($jamPelajaran)->map(fn ($j) => [
+        'nama' => $j[0], 'mulai' => $j[1], 'selesai' => $j[2], 'istirahat' => $j[3],
+        'lewat' => $j[2] <= $sekarang->format('H:i'), // jam yang sudah berakhir tidak bisa dipilih
+    ]);
+    $pelajaran = $jam->where('istirahat', false)->values(); // hanya jam pelajaran yang bisa dipilih
+    $jamTerakhir = $pelajaran->last()['selesai'];
+    $sudahTutup = $pelajaran->every(fn ($j) => $j['lewat']);
+
+    // Pulihkan pilihan jam jika validasi gagal
+    $awalIdx = $pelajaran->search(fn ($j) => $j['mulai'] === substr((string) old('waktu_mulai'), 0, 5));
+    $akhirIdx = $pelajaran->search(fn ($j) => $j['selesai'] === substr((string) old('waktu_selesai'), 0, 5));
+    $pilihanLama = ($awalIdx !== false && $akhirIdx !== false && $awalIdx <= $akhirIdx)
+        ? ['awal' => $awalIdx, 'akhir' => $akhirIdx] : null;
 
     // Jika controller sudah mengirim $saranas, itu yang dipakai. Jika tidak, ambil langsung (hanya baca).
     $saranas = $saranas ?? \App\Models\Sarana::orderBy('nama_sarana')->get();
@@ -38,7 +74,7 @@
         @if ($sudahTutup)
             <div class="mt-6 flex items-start gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
                 <i data-lucide="clock" class="mt-0.5 h-4 w-4 shrink-0"></i>
-                <span>Peminjaman hari ini sudah ditutup (batas pukul 15.00). Silakan ajukan kembali pada jam operasional berikutnya.</span>
+                <span>Peminjaman hari ini sudah ditutup (jam pelajaran terakhir berakhir pukul {{ $jamTerakhir }}). Silakan ajukan kembali pada jam operasional berikutnya.</span>
             </div>
         @endif
         @if ($errors->any())
@@ -131,18 +167,38 @@
                             <p class="mt-1.5 text-xs text-gray-400">Hanya untuk hari ini.</p>
                             @error('tanggal_peminjaman') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
-                        <div>
-                            <label for="waktu_mulai" class="text-sm font-semibold">Waktu Mulai</label>
-                            <input type="time" id="waktu_mulai" name="waktu_mulai" max="14:59" value="{{ old('waktu_mulai') }}" required
-                                   class="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-mint">
-                            @error('waktu_mulai') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label for="waktu_selesai" class="text-sm font-semibold">Waktu Selesai</label>
-                            <input type="time" id="waktu_selesai" name="waktu_selesai" max="{{ $batasJam }}" value="{{ old('waktu_selesai') }}" required
-                                   class="mt-1.5 w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-mint">
-                            <p class="mt-1.5 text-xs text-gray-400">Maksimal pukul 15.00.</p>
-                            @error('waktu_selesai') <p class="mt-1.5 text-xs text-red-600">{{ $message }}</p> @enderror
+                        <div class="sm:col-span-3">
+                            <div class="flex flex-wrap items-baseline justify-between gap-2">
+                                <span class="text-sm font-semibold">Jam Pelajaran</span>
+                                <span class="text-xs text-gray-400">Klik satu jam, lalu klik jam lain untuk memperpanjang. Jam pelajaran terakhir berakhir pukul {{ $jamTerakhir }}.</span>
+                            </div>
+
+                            <input type="hidden" id="waktu_mulai" name="waktu_mulai" value="{{ old('waktu_mulai') }}">
+                            <input type="hidden" id="waktu_selesai" name="waktu_selesai" value="{{ old('waktu_selesai') }}">
+
+                            <div id="jam-grid" class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                                @foreach ($jam as $j)
+                                    @if ($j['istirahat'])
+                                        <div class="flex flex-col justify-center rounded-xl border border-dashed border-amber-200 bg-amber-50/60 px-3 py-2.5">
+                                            <span class="block text-sm font-semibold text-amber-700">{{ $j['nama'] }}</span>
+                                            <span class="mt-0.5 block text-xs text-amber-600/80">{{ $j['mulai'] }} – {{ $j['selesai'] }}</span>
+                                        </div>
+                                    @else
+                                        <button type="button" data-mulai="{{ $j['mulai'] }}" data-selesai="{{ $j['selesai'] }}" data-nama="{{ $j['nama'] }}"
+                                                {{ $j['lewat'] ? 'disabled' : '' }}
+                                                class="jam rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-left transition hover:border-brand-soft
+                                                       disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-200">
+                                            <span class="block text-sm font-semibold">{{ $j['nama'] }}</span>
+                                            <span class="mt-0.5 block text-xs text-gray-500">{{ $j['mulai'] }} – {{ $j['selesai'] }}</span>
+                                        </button>
+                                    @endif
+                                @endforeach
+                            </div>
+
+                            <p id="jam-info" class="mt-2 text-xs text-gray-500">Belum ada jam yang dipilih.</p>
+                            <p id="jam-error" class="mt-1 hidden text-xs text-red-600">Pilih minimal satu jam pelajaran.</p>
+                            @error('waktu_mulai') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            @error('waktu_selesai') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="sm:col-span-3">
@@ -205,10 +261,6 @@
     function perbarui() {
         const r = document.querySelector('input[name="sarana_id"]:checked');
 
-        // Waktu selesai: tidak sebelum waktu mulai, maksimal 15:00
-        if (mulai.value) selesai.min = mulai.value;
-        if (selesai.value && selesai.value > '15:00') selesai.value = '15:00';
-
         if (r) {
             const max = parseInt(r.dataset.max, 10) || 1;
             jumlah.max = max;
@@ -231,8 +283,57 @@
     }
 
     document.querySelectorAll('input[name="sarana_id"]').forEach((el) => el.addEventListener('change', perbarui));
-    [jumlah, tanggal, mulai, selesai].forEach((el) => el.addEventListener('input', perbarui));
-    perbarui();
+    [jumlah, tanggal].forEach((el) => el.addEventListener('input', perbarui));
+
+    // ---- Pilihan jam pelajaran ----
+    const jam = Array.from(document.querySelectorAll('#jam-grid .jam'));
+    const jamInfo = $('jam-info');
+    const pilihanLama = @json($pilihanLama);
+    let awal = null, akhir = null, tahap = 0; // tahap: 0 kosong, 1 satu jam dipilih, 2 rentang jam
+
+    function gambarJam() {
+        jam.forEach((b, i) => {
+            const dalam = awal !== null && i >= awal && i <= akhir;
+            ['ring-2', 'ring-brand', '!border-brand', '!bg-brand-mint'].forEach((c) => b.classList.toggle(c, dalam));
+        });
+
+        if (awal === null) {
+            mulai.value = '';
+            selesai.value = '';
+            jamInfo.textContent = 'Belum ada jam yang dipilih.';
+        } else {
+            mulai.value = jam[awal].dataset.mulai;
+            selesai.value = jam[akhir].dataset.selesai;
+            const nama = awal === akhir
+                ? jam[awal].dataset.nama
+                : jam[awal].dataset.nama + ' sampai ' + jam[akhir].dataset.nama;
+            jamInfo.textContent = nama + ' (' + mulai.value + ' – ' + selesai.value + ')';
+            $('jam-error').classList.add('hidden');
+        }
+        perbarui();
+    }
+
+    jam.forEach((b, i) => b.addEventListener('click', () => {
+        if (tahap === 1) {
+            const lo = Math.min(awal, i), hi = Math.max(awal, i);
+            if (jam.slice(lo, hi + 1).some((x) => x.disabled)) { awal = akhir = i; tahap = 1; }
+            else { awal = lo; akhir = hi; tahap = 2; }
+        } else {
+            awal = akhir = i; tahap = 1; // klik pertama, atau mulai ulang setelah rentang dipilih
+        }
+        gambarJam();
+    }));
+
+    if (pilihanLama) { awal = pilihanLama.awal; akhir = pilihanLama.akhir; tahap = 2; }
+    gambarJam();
+
+    mulai.form.addEventListener('submit', (e) => {
+        if (!mulai.value || !selesai.value) {
+            e.preventDefault();
+            $('jam-error').classList.remove('hidden');
+            $('jam-grid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
 })();
 </script>
 @endsection

@@ -37,6 +37,16 @@
             : data_get($r, 'jumlah', 1);
 
         $f = \App\Support\SaranaFoto::url($sar);
+        // Alasan penolakan: dari data pengajuan, lalu catatan persetujuan terakhir
+        $persetujuan = collect(data_get($r, 'persetujuans', []))->sortByDesc('id')->first();
+        $catatan = collect([
+            data_get($r, 'alasan_penolakan'),
+            data_get($r, 'catatan'),
+            data_get($persetujuan, 'alasan'),
+            data_get($persetujuan, 'catatan'),
+            data_get($persetujuan, 'keterangan'),
+        ])->first(fn ($v) => filled($v));
+
         $mulai = data_get($r, 'waktu_mulai') ?? data_get($r, 'jam_mulai');
         $selesai = data_get($r, 'waktu_selesai') ?? data_get($r, 'jam_selesai');
 
@@ -57,23 +67,12 @@
             'badge' => $st[$s][1] ?? $st['diproses'][1],
             'warna' => $st[$s][2] ?? $st['diproses'][2],
             'detail' => url('/peminjam/riwayat/'.data_get($r, 'id')),
+            'alasan' => $s === 'ditolak' ? ($catatan ?: 'Petugas belum mencantumkan alasan penolakan.') : null,
             'batal' => $s === 'diproses' && \Illuminate\Support\Facades\Route::has('peminjam.pengajuan.cancel') ? route('peminjam.pengajuan.cancel', data_get($r, 'id')) : null,
             'hapus' => in_array($s, ['ditolak', 'dibatalkan', 'dikembalikan']) && \Illuminate\Support\Facades\Route::has('peminjam.riwayat.destroy')
                 ? route('peminjam.riwayat.destroy', data_get($r, 'id')) : null,
         ];
     })->values();
-
-    if ($items->isEmpty()) {
-        $items = collect([
-            ['Laptop Macbook M1 Air', 2, 'Lupa Bawa Laptop', 'diproses', 'SMKN1-RPL-LPT-042'],
-            ['Laptop Axioo Hype', 2, 'Lupa Bawa Laptop', 'ditolak', 'SMKN1-RPL-LPT-017'],
-            ['Microphone', 1, 'TOEIC', 'diproses', 'SMKN1-MM-MIC-005'],
-        ])->map(fn ($r, $i) => [
-            'id' => $i + 1, 'nama' => $r[0], 'foto' => null, 'kode' => $r[4], 'jumlah' => $r[1], 'tujuan' => $r[2], 'dibuat' => '19 Agustus 2026',
-            'tanggal' => null, 'waktu' => null, 'lokasi' => 'Ruang Toolsman RPL, Gedung E-204', 'jurusan' => $jurusan, 'status' => $r[3],
-            'detail' => null, 'label' => $st[$r[3]][0], 'badge' => $st[$r[3]][1], 'warna' => $st[$r[3]][2], 'batal' => null,
-        ]);
-    }
 
     $bisaDihapus = $items->filter(fn ($i) => $i['hapus'] ?? null)->count();
 @endphp
@@ -120,11 +119,24 @@
             </div>
         @endif
 
-        <div class="mt-9 grid items-start gap-8 lg:grid-cols-[1fr_370px]">
+        <div class="mt-9 grid items-start gap-8 {{ $items->isNotEmpty() ? 'lg:grid-cols-[1fr_370px]' : '' }}">
             {{-- DAFTAR --}}
             <div>
                 <h2 class="font-head text-lg font-bold">Daftar Pengajuan</h2>
                 <div id="list" class="mt-4 space-y-4">
+                    @if ($items->isEmpty())
+                        <div class="rounded-2xl bg-white px-6 py-16 text-center shadow-md shadow-brand/10 ring-1 ring-black/5">
+                            <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-mint">
+                                <i data-lucide="inbox" class="h-6 w-6 text-brand-soft"></i>
+                            </span>
+                            <p class="mt-4 font-head text-lg font-bold">Belum ada riwayat pengajuan</p>
+                            <p class="mt-1 text-sm text-gray-500">Pengajuan peminjaman yang Anda buat akan muncul di sini.</p>
+                            <a href="{{ route('peminjam.pengajuan.create') }}"
+                               class="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-brand/25 transition hover:bg-brand-soft">
+                                <i data-lucide="plus" class="h-4 w-4"></i> Ajukan Peminjaman
+                            </a>
+                        </div>
+                    @endif
                     @foreach ($items as $i => $r)
                         <div role="button" tabindex="0" data-i="{{ $i }}"
                                 class="item group flex w-full items-center gap-4 rounded-2xl bg-white p-4 text-left shadow-md shadow-brand/10 ring-1 ring-black/5 transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand/15">
@@ -144,6 +156,7 @@
                 </div>
             </div>
 
+            @if ($items->isNotEmpty())
             {{-- DETAIL AKTIF --}}
             <aside class="rounded-2xl bg-white p-6 shadow-xl shadow-brand/10 ring-1 ring-black/5 lg:sticky lg:top-24">
                 <h2 class="font-head text-lg font-bold">Detail Pengajuan Aktif</h2>
@@ -165,6 +178,11 @@
                     <div class="py-2.5"><dt class="text-xs text-gray-500">Tujuan Peminjaman</dt><dd id="d-tujuan" class="mt-0.5 font-semibold"></dd></div>
                 </dl>
 
+                <div id="d-alasan" class="mt-4 hidden rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-100">
+                    <p class="text-[11px] font-semibold uppercase tracking-wide text-red-500">Alasan Penolakan</p>
+                    <p id="d-alasan-teks" class="mt-1 leading-relaxed"></p>
+                </div>
+
                 <a id="d-detail" href="#" class="mt-5 hidden items-center justify-center gap-2 rounded-xl border border-brand py-2.5 text-sm font-medium transition hover:bg-brand hover:text-white">Lihat detail lengkap <i data-lucide="arrow-right" class="h-4 w-4"></i></a>
 
                 <form id="d-batal" method="POST" class="mt-4 hidden" onsubmit="return confirm('Batalkan pengajuan ini?')">
@@ -179,6 +197,7 @@
                     </button>
                 </form>
             </aside>
+            @endif
         </div>
     </div>
 </section>
@@ -202,6 +221,7 @@
         const dl = $('d-detail'); dl.classList.toggle('hidden', !r.detail); dl.classList.toggle('flex', !!r.detail); if (r.detail) dl.href = r.detail;
         const b = $('d-batal'); b.classList.toggle('hidden', !r.batal); if (r.batal) b.action = r.batal;
         const h = $('d-hapus'); h.classList.toggle('hidden', !r.hapus); if (r.hapus) h.action = r.hapus;
+        const al = $('d-alasan'); al.classList.toggle('hidden', !r.alasan); if (r.alasan) $('d-alasan-teks').textContent = r.alasan;
     }
     btns.forEach((b, i) => { b.addEventListener('click', () => pilih(i)); b.addEventListener('keydown', e => { if (e.key === 'Enter') pilih(i); }); });
     if (data.length) pilih(0);
