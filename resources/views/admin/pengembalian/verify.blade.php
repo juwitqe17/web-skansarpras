@@ -1,6 +1,29 @@
 @extends('layouts.admin')
 
 @section('page-content')
+@php
+    $peminjaman = $pengembalian->peminjaman;
+    $isSelesai = ($pengembalian->status ?? '') === 'selesai';
+
+    // Hitung batas waktu dari tanggal_peminjaman + waktu_selesai di tabel peminjamans
+    $batasWaktu = null;
+    if ($peminjaman && !empty($peminjaman->tanggal_peminjaman)) {
+        $tglStr = \Carbon\Carbon::parse($peminjaman->tanggal_peminjaman)->format('Y-m-d');
+        $jamStr = !empty($peminjaman->waktu_selesai)
+            ? \Carbon\Carbon::parse($peminjaman->waktu_selesai)->format('H:i:s')
+            : '23:59:59';
+        $batasWaktu = \Carbon\Carbon::parse("{$tglStr} {$jamStr}");
+    }
+
+    // Waktu acuan kembali (jika sudah selesai pakai updated_at/tanggal_pengembalian, jika belum pakai waktu sekarang)
+    $waktuAcuan = $isSelesai
+        ? \Carbon\Carbon::parse($pengembalian->updated_at ?? ($pengembalian->tanggal_pengembalian ?? now()))
+        : now();
+
+    $isTidakTepatWaktu = ($peminjaman->status ?? '') === 'terlambat'
+        || ($batasWaktu ? $waktuAcuan->gt($batasWaktu) : false);
+@endphp
+
 <!-- CSS Khusus untuk Radio Button Kustom Sesuai Figma -->
 <style>
     .radio-input:checked + .radio-box {
@@ -19,21 +42,21 @@
 </style>
 
 <div class="space-y-6 text-gray-800">
-    
-    <!-- Header Page -->
-    <div>
-        <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">Verifikasi Pengembalian</h1>
-        <p class="mt-1 text-sm text-gray-400">Verifikasi pengembalian pinjaman barang di bawah ini. Pastikan kondisi barang baik.</p>
-    </div>
 
-    <!-- Tombol Kembali -->
-    <div>
-        <a href="{{ route('admin.pengembalian.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 transition shadow-sm">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-            </svg>
-            Kembali
-        </a>
+    <!-- Header Page -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-3xl font-extrabold text-[#0A261D] tracking-tight">Detail Pengembalian</h1>
+            <p class="mt-1 text-sm text-gray-400">Verifikasi pengembalian pinjaman barang di bawah ini. Pastikan kondisi barang baik.</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="{{ route('admin.pengembalian.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 transition shadow-2xs">
+                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Kembali
+            </a>
+        </div>
     </div>
 
     <!-- Main Container Card -->
@@ -45,18 +68,18 @@
 
             <!-- Baris 1: Tiga Card Informasi Atas (Berjajar ke Samping) -->
             <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;" class="mb-6">
-                
+
                 <!-- 1. Card Peminjam -->
                 <div class="bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs">
                     <span class="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">PEMINJAM</span>
                     <div class="flex items-center gap-3">
                         <div class="w-11 h-11 rounded-xl bg-[#d1fae5] text-[#065f46] font-extrabold flex items-center justify-center text-sm shrink-0">
-                            {{ strtoupper(substr($pengembalian->peminjaman->user->name ?? 'BS', 0, 2)) }}
+                            {{ strtoupper(substr($peminjaman->user->name ?? 'BS', 0, 2)) }}
                         </div>
                         <div class="overflow-hidden">
-                            <h4 class="text-xs font-bold text-gray-900 truncate">{{ $pengembalian->peminjaman->user->name ?? 'Budi Santoso' }}</h4>
-                            <p class="text-[11px] text-gray-400 truncate">Email: <span class="text-gray-600">{{ $pengembalian->peminjaman->user->email ?? '-' }}</span></p>
-                            <p class="text-[11px] text-gray-400">Kelas: <span class="text-gray-600">{{ $pengembalian->peminjaman->user->kelas ?? 'XII-RPL' }}</span></p>
+                            <h4 class="text-xs font-bold text-gray-900 truncate">{{ $peminjaman->user->name ?? 'Budi Santoso' }}</h4>
+                            <p class="text-[11px] text-gray-400 truncate">Email: <span class="text-gray-600">{{ $peminjaman->user->email ?? '-' }}</span></p>
+                            <p class="text-[11px] text-gray-400">Kelas: <span class="text-gray-600">{{ $peminjaman->user->kelas ?? 'XII-RPL' }}</span></p>
                         </div>
                     </div>
                 </div>
@@ -65,7 +88,7 @@
                 <div class="bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs">
                     <span class="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">BARANG YANG DIPINJAM</span>
                     <div class="space-y-1">
-                        @forelse($pengembalian->peminjaman->detailPeminjamans as $detail)
+                        @forelse($peminjaman->detailPeminjamans ?? [] as $detail)
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-xl bg-white border border-gray-200 overflow-hidden flex items-center justify-center shrink-0">
                                     @if(isset($detail->sarana->gambar))
@@ -89,24 +112,30 @@
 
                 <!-- 3. Card Waktu Kembali -->
                 <div class="bg-white border border-gray-200/80 rounded-2xl p-4 flex flex-col justify-between space-y-3 shadow-2xs">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between gap-2">
                         <span class="text-[10px] font-extrabold text-gray-400 uppercase tracking-wider">WAKTU KEMBALI</span>
-                        <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md">
-                            Tepat Waktu
-                        </span>
+                        @if($isTidakTepatWaktu)
+                            <span class="px-2.5 py-0.5 bg-red-100 text-red-700 text-[10px] font-bold rounded-md">
+                                Tidak Tepat Waktu
+                            </span>
+                        @else
+                            <span class="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md">
+                                Tepat Waktu
+                            </span>
+                        @endif
                     </div>
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-[#d1fae5] text-[#065f46] flex items-center justify-center shrink-0">
+                        <div class="w-10 h-10 rounded-xl {{ $isTidakTepatWaktu ? 'bg-red-100 text-red-700' : 'bg-[#d1fae5] text-[#065f46]' }} flex items-center justify-center shrink-0">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                             </svg>
                         </div>
                         <div class="overflow-hidden">
                             <h4 class="text-xs font-extrabold text-gray-900 truncate">
-                                {{ \Carbon\Carbon::parse($pengembalian->tanggal_pengembalian ?? now())->translatedFormat('d F Y, H.i') }} WIB
+                                {{ $waktuAcuan->translatedFormat('d F Y, H.i') }} WIB
                             </h4>
                             <p class="text-[10px] text-gray-400 mt-0.5 truncate">
-                                Batas: 14 Agustus 2026, 14.00 WIB
+                                Batas: {{ $batasWaktu ? $batasWaktu->translatedFormat('d M Y, H.i') . ' WIB' : '-' }}
                             </p>
                         </div>
                     </div>
@@ -118,7 +147,7 @@
             <div class="space-y-3 mb-6">
                 <label class="block text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">CEK KELAYAKAN & FISIK</label>
                 <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem;">
-                    
+
                     <label class="cursor-pointer bg-[#f8fafc] border border-gray-200/80 rounded-2xl p-3.5 flex items-center gap-3 hover:bg-gray-100/50 transition">
                         <input type="checkbox" name="kelayakan[]" value="aksesoris_lengkap" class="w-4 h-4 rounded text-[#0A261D] focus:ring-[#0A261D] border-gray-300">
                         <span class="text-xs font-bold text-gray-800">Unit & Aksesoris Lengkap</span>
@@ -141,7 +170,7 @@
             <div class="space-y-3 mb-6">
                 <label class="block text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">STATUS KONDISI AKHIR BARANG</label>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    
+
                     <label class="cursor-pointer relative block">
                         <input type="radio" name="kondisi_pengembalian" value="baik" class="radio-input absolute opacity-0 w-0 h-0" checked>
                         <div class="radio-box flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl border-2 border-gray-200 bg-[#f8fafc] transition-all">
@@ -168,7 +197,7 @@
             <!-- Bagian Catatan Petugas -->
             <div class="space-y-2 mb-8">
                 <label for="catatan" class="block text-[11px] font-extrabold text-gray-400 uppercase tracking-wider">CATATAN PETUGAS (OPSIONAL)</label>
-                <textarea id="catatan" name="catatan" rows="4" placeholder="Masukkan Catatan..." 
+                <textarea id="catatan" name="catatan" rows="4" placeholder="Masukkan Catatan..."
                           class="w-full bg-[#f8fafc] border border-gray-200 rounded-2xl p-4 text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#0A261D] transition resize-none"></textarea>
             </div>
 
@@ -177,7 +206,7 @@
                 <a href="{{ route('admin.pengembalian.index') }}" class="px-6 py-2.5 bg-white border border-gray-300 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-50 transition">
                     Batal
                 </a>
-                
+
                 <button type="submit" class="px-6 py-2.5 bg-[#0A261D] rounded-xl text-xs font-semibold text-white hover:bg-opacity-90 flex items-center gap-2 transition shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>

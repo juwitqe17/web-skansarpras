@@ -88,62 +88,88 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 text-xs text-gray-600">
-                    @forelse($pengembalians as $pengembalian)
-                        <tr class="hover:bg-gray-50 transition">
-                            <!-- Tanggal Pengembalian -->
-                            <td class="py-4 px-4 align-top">
-                                <p class="font-bold text-gray-900">
-                                    {{ $pengembalian->tanggal_pengembalian ? \Carbon\Carbon::parse($pengembalian->tanggal_pengembalian)->translatedFormat('d F Y') : '-' }}
+                @forelse($pengembalians as $pengembalian)
+                    @php
+                        $peminjaman = $pengembalian->peminjaman;
+                        $isSelesai = strtolower((string) ($pengembalian->status ?? '')) === 'selesai';
+
+                        // Hitung batas waktu dari tanggal_peminjaman + waktu_selesai di tabel peminjamans
+                        $batasWaktu = null;
+                        if ($peminjaman && !empty($peminjaman->tanggal_peminjaman)) {
+                            $tglStr = \Carbon\Carbon::parse($peminjaman->tanggal_peminjaman)->format('Y-m-d');
+                            $jamStr = !empty($peminjaman->waktu_selesai)
+                                ? \Carbon\Carbon::parse($peminjaman->waktu_selesai)->format('H:i:s')
+                                : '23:59:59';
+                            $batasWaktu = \Carbon\Carbon::parse("{$tglStr} {$jamStr}");
+                        }
+
+                        // Cek apakah melewati batas waktu (selama belum selesai)
+                        $isTerlambat = !$isSelesai && (
+                            strtolower((string) ($pengembalian->status ?? '')) === 'terlambat'
+                            || strtolower((string) ($peminjaman->status ?? '')) === 'terlambat'
+                            || ($batasWaktu ? now()->gt($batasWaktu) : false)
+                        );
+                    @endphp
+
+                    <tr class="{{ $isTerlambat ? 'bg-rose-50/40 hover:bg-rose-50/70' : 'hover:bg-gray-50' }} transition">
+                        <!-- Tanggal Pengembalian / Batas Jadwal -->
+                        <td class="py-4 px-4 align-top">
+                            <p class="font-bold text-gray-900">
+                                {{ $pengembalian->tanggal_pengembalian ? \Carbon\Carbon::parse($pengembalian->tanggal_pengembalian)->translatedFormat('d F Y') : '-' }}
+                            </p>
+                            <p class="text-[11px] text-gray-400 mt-0.5">
+                                {{ $pengembalian->tanggal_pengembalian ? \Carbon\Carbon::parse($pengembalian->tanggal_pengembalian)->format('H:i') . ' WIB' : '' }}
+                            </p>
+                            @if($batasWaktu)
+                                <p class="text-[10px] mt-1 {{ $isTerlambat ? 'text-rose-600 font-semibold' : 'text-gray-400' }}">
+                                    Batas: {{ $batasWaktu->translatedFormat('d M Y, H.i') }} WIB
                                 </p>
-                                <p class="text-[11px] text-gray-400 mt-0.5">
-                                    {{ $pengembalian->tanggal_pengembalian ? \Carbon\Carbon::parse($pengembalian->tanggal_pengembalian)->format('H:i') . ' WIB' : '' }}
-                                </p>
-                            </td>
+                            @endif
+                        </td>
 
-                            <!-- Identitas Peminjam -->
-                            <td class="py-4 px-4 align-top space-y-0.5">
-                                <p class="font-bold text-gray-900">{{ $pengembalian->peminjaman->user->name ?? '-' }}</p>
-                                <p class="text-[11px] text-gray-400">Email: <span class="underline">{{ $pengembalian->peminjaman->user->email ?? '-' }}</span></p>
-                                <p class="text-[11px] font-semibold text-[#0b3323]">
-                                    Jurusan: {{ $pengembalian->peminjaman->user->jurusan->nama_jurusan ?? $pengembalian->peminjaman->user->jurusan->nama ?? '-' }}
-                                </p>
-                            </td>
+                        <!-- Identitas Peminjam -->
+                        <td class="py-4 px-4 align-top space-y-0.5">
+                            <p class="font-bold text-gray-900">{{ $peminjaman->user->name ?? '-' }}</p>
+                            <p class="text-[11px] text-gray-400">Email: <span class="underline">{{ $peminjaman->user->email ?? '-' }}</span></p>
+                            <p class="text-[11px] font-semibold text-[#0b3323]">
+                                Jurusan: {{ $peminjaman->user->jurusan->nama_jurusan ?? $peminjaman->user->jurusan->nama ?? '-' }}
+                            </p>
+                        </td>
 
-                            <!-- Sarana Prasarana -->
-                            <td class="py-4 px-4 align-top">
-                                <ul class="space-y-1">
-                                    @forelse($pengembalian->peminjaman->detailPeminjamans ?? [] as $detail)
-                                        <li class="font-semibold text-gray-800">
-                                            - {{ $detail->sarana->nama_sarana ?? $detail->sarana->nama ?? 'Sarana/Barang' }} 
-                                            <span class="text-gray-500 font-normal">({{ $detail->jumlah ?? 1 }} Unit)</span>
-                                        </li>
-                                    @empty
-                                        <li class="text-gray-400 italic">Tidak ada detail barang</li>
-                                    @endforelse
-                                </ul>
-                            </td>
+                        <!-- Sarana Prasarana -->
+                        <td class="py-4 px-4 align-top">
+                            <ul class="space-y-1">
+                                @forelse($peminjaman->detailPeminjamans ?? [] as $detail)
+                                    <li class="font-semibold text-gray-800">
+                                        - {{ $detail->sarana->nama_sarana ?? $detail->sarana->nama ?? 'Sarana/Barang' }}
+                                        <span class="text-gray-500 font-normal">({{ $detail->jumlah ?? 1 }} Unit)</span>
+                                    </li>
+                                @empty
+                                    <li class="text-gray-400 italic">Tidak ada detail barang</li>
+                                @endforelse
+                            </ul>
+                        </td>
 
-                            <!-- Admin / Petugas -->
-                            <td class="py-4 px-4 align-top">
-                                <p class="font-medium text-gray-800">{{ $pengembalian->admin->name ?? '-' }}</p>
-                            </td>
+                        <!-- Admin / Petugas -->
+                        <td class="py-4 px-4 align-top">
+                            <p class="font-medium text-gray-800">{{ $pengembalian->admin->name ?? '-' }}</p>
+                        </td>
 
-                            <!-- Kolom Status -->
-                            <td class="py-4 px-4 align-top text-center">
+                        <!-- Kolom Status -->
+                        <td class="py-4 px-4 align-top text-center space-y-1">
+                            @if($isSelesai)
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                    Selesai
+                                </span>
+                            @elseif($isTerlambat)
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-200">
+                                    Terlambat
+                                </span>
+                            @else
                                 @switch($pengembalian->status)
-                                    @case('selesai')
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                                            Selesai
-                                        </span>
-                                        @break
                                     @case('sedang_berlangsung')
                                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-500 border border-sky-200">
                                             Sedang Berlangsung
-                                        </span>
-                                        @break
-                                    @case('terlambat')
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-600 border border-rose-200">
-                                            Terlambat
                                         </span>
                                         @break
                                     @default
@@ -151,28 +177,29 @@
                                             Menunggu Verifikasi
                                         </span>
                                 @endswitch
-                            </td>
+                            @endif
+                        </td>
 
-                            <!-- Aksi -->
-                            <td class="py-4 px-4 align-top text-center">
-                                @if(strtolower($pengembalian->status) == 'selesai')
-                                    <a href="{{ route('admin.pengembalian.show', $pengembalian->id) }}" class="inline-block px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-xs font-medium transition border border-gray-200">
-                                        Detail
-                                    </a>
-                                @else
-                                    <a href="{{ route('admin.pengembalian.verify', $pengembalian->id) }}" class="inline-block px-3.5 py-1.5 bg-[#0b3323] hover:bg-emerald-900 text-white rounded-md text-xs font-medium transition shadow-sm">
-                                        Verifikasi
-                                    </a>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="py-8 text-center text-gray-500">
-                                Tidak ada data pengembalian yang ditemukan.
-                            </td>
-                        </tr>
-                    @endforelse
+                        <!-- Aksi -->
+                        <td class="py-4 px-4 align-top text-center">
+                            @if($isSelesai)
+                                <a href="{{ route('admin.pengembalian.show', $pengembalian->id) }}" class="inline-block px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-xs font-medium transition border border-gray-200">
+                                    Detail
+                                </a>
+                            @else
+                                <a href="{{ route('admin.pengembalian.verify', $pengembalian->id) }}" class="inline-block px-3.5 py-1.5 bg-[#0b3323] hover:bg-emerald-900 text-white rounded-md text-xs font-medium transition shadow-sm">
+                                    Verifikasi
+                                </a>
+                            @endif
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="py-8 text-center text-gray-500">
+                            Tidak ada data pengembalian yang ditemukan.
+                        </td>
+                    </tr>
+                @endforelse
                 </tbody>
             </table>
         </div>
@@ -180,8 +207,8 @@
         <!-- Table Pagination Footer -->
         <div class="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
             <p>
-                Menampilkan <span class="font-semibold text-gray-800">{{ $pengembalians->firstItem() ?? 0 }}</span> 
-                sampai <span class="font-semibold text-gray-800">{{ $pengembalians->lastItem() ?? 0 }}</span> 
+                Menampilkan <span class="font-semibold text-gray-800">{{ $pengembalians->firstItem() ?? 0 }}</span>
+                sampai <span class="font-semibold text-gray-800">{{ $pengembalians->lastItem() ?? 0 }}</span>
                 dari <span class="font-semibold text-gray-800">{{ $pengembalians->total() }}</span> data
             </p>
             <div>

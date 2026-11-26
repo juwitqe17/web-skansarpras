@@ -20,7 +20,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Manajemen Departemen</h1>
-            <p class="text-sm text-gray-400 mt-0.5">Kelola data jurusan dan ketersediaan sarana prasarana.</p>
+            <p class="text-sm text-gray-500 mt-1">Kelola data jurusan dan ketersediaan sarana prasarana.</p>
         </div>
         <div>
             <a href="{{ route('admin.jurusan.create') }}" class="inline-flex items-center space-x-2 bg-[#0b3323] hover:bg-emerald-900 text-white font-medium px-4 py-2.5 rounded-lg text-sm transition shadow-sm">
@@ -125,7 +125,7 @@
                                 @php
                                     $kode = strtoupper($item->kode_jurusan ?? '');
                                     $nama = strtolower($item->nama_jurusan ?? '');
-                                    
+
                                     // Logika Klasifikasi Warna
                                     if (str_contains($nama, 'tani') || str_contains($nama, 'pangan') || str_contains($nama, 'agri') || in_array($kode, ['ATPH', 'AP', 'APT'])) {
                                         // Pertanian -> Hijau

@@ -9,11 +9,12 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Peminjam\PengajuanController as PeminjamPengajuanController;
 use App\Http\Controllers\Peminjam\PengembalianController as PeminjamPengembalianController;
+use App\Http\Controllers\Peminjam\SaranaController as PeminjamSaranaController;
 use App\Http\Controllers\Peminjam\RiwayatController;
 use App\Http\Controllers\Peminjam\RiwayatHapusController;
-use App\Http\Controllers\Peminjam\SaranaController as PeminjamSaranaController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/', fn () => view('homepage'))->name('homepage');
 
 /*
 |--------------------------------------------------------------------------
@@ -80,6 +81,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
         Route::get('/jadwal', [JadwalPenggunaanController::class, 'index'])->name('jadwal.index');
         Route::get('/jadwal/{jadwalPenggunaan}', [JadwalPenggunaanController::class, 'show'])->name('jadwal.show');
         Route::get('/jadwal/export-pdf', [JadwalPenggunaanController::class, 'exportPdf'])->name('admin.jadwal.export-pdf');
+
+
 
     });
 
